@@ -158,7 +158,7 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		#time.sleep(0.1)
 		s2_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
 		s3_quantity = s2_quantity
-		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, False)
+		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
         
 	elif type == 'BUY_SELL_SELL':
 		s1_quantity = initial_amount/scrip_prices[scrip1]
@@ -166,11 +166,11 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		#time.sleep(0.1)
 		s1_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip2, exchange = exchange, order = "sell")
 		s2_quantity = s1_quantity
-		place_sell_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, False)
+		place_sell_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, True)
 		#time.sleep(0.1)
 		s3_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
 		#s3_quantity = s2_quantity * scrip_prices[scrip2]
-		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, False)
+		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
 
 def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_investment, 
                                transaction_brokerage, min_profit, exchange, price_list):
