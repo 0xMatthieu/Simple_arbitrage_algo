@@ -69,6 +69,8 @@ def main(exchange = 'kucoin'):
 		Kucoin_trade.get_all_pairs()
 		sk.df_all_combinations = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
 		sk.df_all_combinations, sk.df_unique_currencies, sk.dict_all_combinations = Arbitrage.get_crypto_combinations(sk.df_all_pairs, "USDT", sk.df_all_combinations)
+		Kucoin_trade.prepare_price_list_for_websocket()
+		Kucoin_trade.start_websocket()
 		text = f"Start software kucoin -{datetime.now().strftime('%H:%M:%S')}"
 		Trade_algo.send_text(text, exchange = exchange)
 
@@ -115,6 +117,7 @@ def main(exchange = 'kucoin'):
 				Kucoin_trade.get_all_pairs()
 				sk.df_all_combinations = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
 				sk.df_all_combinations, sk.df_unique_currencies, sk.dict_all_combinations = Arbitrage.get_crypto_combinations(sk.df_all_pairs, "USDT", sk.df_all_combinations)
+				Kucoin_trade.prepare_price_list_for_websocket()
 
 		if time.time() > Time_cycle:
 			Time_cycle = time.time() + Cycle_step
@@ -165,7 +168,7 @@ def main(exchange = 'kucoin'):
 				INVESTMENT_AMOUNT_DOLLARS = sk.current_money_available
 				INVESTMENT_AMOUNT_DOLLARS = 22
 				MIN_PROFIT_DOLLARS = 2
-				Kucoin_trade.get_all_prices()
+				#Kucoin_trade.get_all_prices()
 
 				
 				for row in sk.dict_all_combinations:
@@ -184,10 +187,10 @@ def main(exchange = 'kucoin'):
 
 					# Check triangular arbitrage for buy-buy-sell 
 					Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices)
+											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket)
 				    # Check triangular arbitrage for buy-sell-sell 
 					Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices)
+											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket)
 					Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
 
 

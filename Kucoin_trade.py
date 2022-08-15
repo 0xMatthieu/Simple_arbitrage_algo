@@ -11,6 +11,8 @@ import time
 
 from kucoin.client import Client
 from kucoin.exceptions import KucoinAPIException, KucoinRequestException, MarketOrderException
+from kucoin.asyncio import KucoinSocketManager
+import asyncio
 import pandas as pd
 import logging
 import settings_kucoin as sk
@@ -19,6 +21,7 @@ import numpy as np
 import requests
 from datetime import datetime
 import Trade_algo
+from tqdm import tqdm
 
 
 def do_market_order(currency_name =0, order_type = "None", quantity = 0, current_price = 0, to_round = True):
@@ -120,6 +123,16 @@ def get_all_prices():
 		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
 		Trade_algo.send_text(text, exchange = 'kucoin')
 
+def prepare_price_list_for_websocket():
+	get_all_prices()
+	sk.all_prices_websocket = sk.all_prices.copy()
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['averagePrice', 'buy', 'changePrice', 'changeRate', 'high'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['takerCoefficient', 'takerFeeRate', 'vol', 'volValue'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['low', 'makerCoefficient', 'makerFeeRate', 'sell'])
+	sk.all_prices_websocket['lastUpdateTime'] = 0
+	sk.all_prices_websocket['period'] = 0
+	sk.all_prices_websocket['ksm'] = 0
+
 def fiat_available(Currency = "USDT", Log = False):
 	# shall be call first, reset current total
 	sk.current_total = 0
@@ -146,6 +159,70 @@ def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 		price = float(price_row["last"].item())
 	return price
 
+loop = asyncio.get_event_loop()
+
+async def websocket_get_tickers_and_account_balance():
+	global loop
+
+	# callback function that receives messages from the socket
+	async def handle_evt(msg):
+		"""
+		if msg['topic'] == '/market/ticker:ETH-USDT':
+			print(f'got ETH-USDT tick:{msg["data"]}')
+			print(f'ETH-USDT tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
+
+		if msg['topic'] == '/market/ticker:MANA-BTC':
+			print(f'got MANA-BTC tick:{msg["data"]["price"]}')
+			print(f'MANA-BTC tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
+			sk.msg = msg
+
+		elif msg['topic'] == '/market/ticker:all':
+			#print(f'got all market snapshot:{msg}')
+			#print(f'all tickers tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
+		elif msg['topic'] == '/account/balance':
+			print(f'got account balance:{msg["data"]}')
+		"""
+		sk.msg = msg
+		#update price in price list
+		symbol=smsg['topic'].split(':')[1]
+		#symbol=msg['subject']
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'last'] = msg["data"]["price"]
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
+		#sk.all_prices_websocket.loc[sk.all_prices_websocket['lastUpdateTime'] != 0]
+
+
+
+
+	#ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	#ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private=True)
+
+	# Note: try these one at a time, if all are on you will see a lot of output
+
+	# ETH-USDT Market Ticker
+	#await ksm.subscribe('/market/ticker:ETH-USDT')
+	#await ksm.subscribe('/market/ticker:MANA-BTC')
+	# Account balance - must be authenticated
+	#await ksm_private.subscribe('/account/balance')
+	# All tickers
+	#await ksm.subscribe('/market/ticker:all')
+	for row in tqdm(sk.all_prices_websocket.itertuples()): 
+		topic = '/market/ticker:' + str(row[2])
+		#print(f'{topic}')
+		sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+		await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
+
+	while True:
+		print("sleeping to keep loop open")
+		#text = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
+		text = sk.all_prices_websocket
+		print(f'{text}')
+		await asyncio.sleep(5, loop=loop)
+
+
+def start_websocket():
+	# for private topics such as '/account/balance' pass private=True
+	loop.run_until_complete(websocket_get_tickers_and_account_balance())
 
 if __name__ == "__main__":
    main()

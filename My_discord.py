@@ -101,12 +101,12 @@ def discord_arbitrage_run():
 	load_dotenv(dotenv_path=".env")
 
 	time.sleep(10)
-
+	"""
 	print('start thread binance')
 	arbitrage_thread_binance = Thread(target=Main_Arbitrage.main, args=('binance',))
 	arbitrage_thread_binance.name = 'binance thead'
 	arbitrage_thread_binance.start()
-
+	"""
 	print('start thread kucoin')
 	arbitrage_thread_kucoin = Thread(target=Main_Arbitrage.main, args=('kucoin',))
 	arbitrage_thread_kucoin.name = 'kucoin thead'
