@@ -184,7 +184,7 @@ async def websocket_get_tickers_and_account_balance():
 		"""
 		sk.msg = msg
 		#update price in price list
-		symbol=smsg['topic'].split(':')[1]
+		symbol=msg['topic'].split(':')[1]
 		#symbol=msg['subject']
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'last'] = msg["data"]["price"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
