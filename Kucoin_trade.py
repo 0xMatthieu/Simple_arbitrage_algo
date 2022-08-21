@@ -177,7 +177,7 @@ def update_time():
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
 
-async def websocket_get_tickers_and_account_balance(loop, start):
+async def websocket_get_tickers_and_account_balance(loop):
 
 	async def compute(msg):
 		"""
@@ -225,21 +225,16 @@ async def websocket_get_tickers_and_account_balance(loop, start):
 	# All tickers
 	#await ksm.subscribe('/market/ticker:all')
 
-	LIMIT = 100
-	index = 0
 	topic = '/market/ticker:'
 	#print(f'{start}')
 	#print(f'{start + LIMIT}')
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		#print(f'{index}')
-		if row[0] == start:
-			topic = topic + str(row[2])
-		elif row[0] > start and row[0] <= start + LIMIT:
-			topic = topic + ',' + str(row[2])
-		elif index >= start + LIMIT or row[0] < index:
-			break
-		index +=1
-	#print(f'{topic}')
+		if row[0] == 0:
+			topic = topic + str(row[1])
+		elif row[0] > 0:
+			topic = topic + ',' + str(row[1])
+	print(f'{topic}')
 		#sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
 		#await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
 	

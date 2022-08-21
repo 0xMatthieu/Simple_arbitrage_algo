@@ -103,8 +103,8 @@ def discord_arbitrage_run():
 
 	loop = asyncio.get_event_loop()
 	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'get_list'))
-	#for i in range(0, 1300, 100):
-	#	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop,i))
+	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'do_arbitrage'))
+	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop))
 	#loop.create_task(Kucoin_trade.display_dataframe(loop))	
 	discord_bot = os.environ.get('discord_bot')
 	loop.create_task(client.start(discord_bot))

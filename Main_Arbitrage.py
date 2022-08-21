@@ -20,7 +20,7 @@ from datetime import datetime
 import asyncio
 
 async def run_async_main(exchange = 'kucoin', job = 'get_list'):
-	main(exchange = exchange)
+	main(exchange = exchange, job = job)
 
 
 def main(exchange = 'kucoin', job = 'get_list'):
@@ -49,7 +49,7 @@ def main(exchange = 'kucoin', job = 'get_list'):
 	if exchange == 'binance':
 		#sb.init()
 		sb.do_real_order = True
-		text = f"{exchange} real order is {sb.do_real_order}"
+		text = f"{exchange} real order is {sb.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Binance_trade.get_all_pairs()
 		sb.df_all_combinations = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
@@ -66,17 +66,16 @@ def main(exchange = 'kucoin', job = 'get_list'):
 	Kucoin exchange
 	"""
 	if exchange == 'kucoin':
-		if job == 'get_list':
-			sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
+		sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
 		#sk.init()
 		sk.do_real_order = True
-		text = f"{exchange} real order is {sk.do_real_order}"
+		text = f"{exchange} real order is {sk.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Kucoin_trade.get_all_pairs()
 		sk.df_all_combinations = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
 		sk.df_all_combinations, sk.df_unique_currencies, sk.dict_all_combinations = Arbitrage.get_crypto_combinations(sk.df_all_pairs, "USDT", sk.df_all_combinations)
 		Kucoin_trade.prepare_price_list_for_websocket()
-		Kucoin_trade.start_websocket()
+		#Kucoin_trade.start_websocket()
 		text = f"Start software kucoin -{datetime.now().strftime('%H:%M:%S')}"
 		Trade_algo.send_text(text, exchange = exchange)
 
