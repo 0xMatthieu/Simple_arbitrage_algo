@@ -24,6 +24,9 @@ import Trade_algo
 from tqdm import tqdm
 
 
+
+
+
 def do_market_order(currency_name =0, order_type = "None", quantity = 0, current_price = 0, to_round = True):
 	sk.order_done_current_cycle = True
 	row = sk.df_all_pairs.loc[sk.df_all_pairs['symbol'] == currency_name]
@@ -159,15 +162,16 @@ def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 		price = float(price_row["last"].item())
 	return price
 
-loop = asyncio.get_event_loop()
+def update_time():
+	current_time = int(time.time() * 1000)
+	for row in tqdm(sk.all_prices_websocket.itertuples()):
+		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
 
-async def websocket_get_tickers_and_account_balance():
-	global loop
+async def websocket_get_tickers_and_account_balance(loop):
 
-	# callback function that receives messages from the socket
-	async def handle_evt(msg):
+	async def compute(msg):
 		"""
-		if msg['topic'] == '/market/ticker:ETH-USDT':
+		if msg['topic'] == '/market/ticker:BTC-USDT':
 			print(f'got ETH-USDT tick:{msg["data"]}')
 			print(f'ETH-USDT tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
 
@@ -182,40 +186,51 @@ async def websocket_get_tickers_and_account_balance():
 		elif msg['topic'] == '/account/balance':
 			print(f'got account balance:{msg["data"]}')
 		"""
-		sk.msg = msg
+		#sk.msg = msg
 		#update price in price list
-		symbol=msg['topic'].split(':')[1]
-		#symbol=msg['subject']
+		#symbol=msg['topic'].split(':')[1]
+		symbol=msg['subject']
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'last'] = msg["data"]["price"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
-		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
+		#sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
 		#sk.all_prices_websocket.loc[sk.all_prices_websocket['lastUpdateTime'] != 0]
 
+	# callback function that receives messages from the socket
+	async def handle_evt(msg):
+		task = asyncio.create_task(compute(msg))
+		await task
 
 
-
-	#ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
 	#ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private=True)
 
 	# Note: try these one at a time, if all are on you will see a lot of output
 
 	# ETH-USDT Market Ticker
-	#await ksm.subscribe('/market/ticker:ETH-USDT')
+	#await ksm.subscribe('/market/ticker:BTC-USDT')
 	#await ksm.subscribe('/market/ticker:MANA-BTC')
 	# Account balance - must be authenticated
 	#await ksm_private.subscribe('/account/balance')
 	# All tickers
-	#await ksm.subscribe('/market/ticker:all')
+	await ksm.subscribe('/market/ticker:all')
+	"""
+	topic = '/market/ticker:'
 	for row in tqdm(sk.all_prices_websocket.itertuples()): 
-		topic = '/market/ticker:' + str(row[2])
+		topic = topic + ',' + str(row[2])
 		#print(f'{topic}')
-		sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
-		await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
+		#sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+		#await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
+	
+	await ksm.subscribe(topic)
+	"""
 
 	while True:
 		print("sleeping to keep loop open")
-		#text = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
-		text = sk.all_prices_websocket
+		#update_time()
+		#current_time = int(time.time() * 1000)
+		#sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'period'] = current_time - int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'lastUpdateTime'])
+		text = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
+		#text = sk.all_prices_websocket
 		print(f'{text}')
 		await asyncio.sleep(5, loop=loop)
 

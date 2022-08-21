@@ -15,8 +15,12 @@ import Arbitrage
 import time
 import logging
 import pandas as pd
-#import My_discord
+
 from datetime import datetime
+import asyncio
+
+async def run_async_main(exchange = 'kucoin'):
+	main(exchange = exchange)
 
 
 def main(exchange = 'kucoin'):
