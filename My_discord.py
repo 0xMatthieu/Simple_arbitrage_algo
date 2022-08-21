@@ -46,6 +46,13 @@ def update_money():
 	message = (f"Binance: money is {Binance_usdt} USDT and {Binance_busd} BUSD. Kucoin: money is {Kucoin_usdt} USDT")
 	return message
 
+def kucoin_value(text):
+	if text == 'btc':
+		message = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
+	elif text == 'all':
+		message = sk.all_prices_websocket
+	return message
+
 @client.event
 async def on_ready():
 	print('We have logged in as {0.user}'.format(client))
@@ -67,12 +74,16 @@ async def on_message(message):
 		message_to_send = update_money()
 		await message.channel.send(message_to_send)
 
+	if message.content.startswith('btc'):
+		message_to_send = kucoin_value('btc')
+		await message.channel.send(message_to_send)
+
+	if message.content.startswith('all'):
+		message_to_send = kucoin_value('all')
+		await message.channel.send(message_to_send)
+
 	if message.content.startswith('exception'):
 		raise Exception('an error occured')
-
-	if message.content.startswith('alive'):
-		await message.channel.send(f"arbitrage thread is {arbitrage_thread_binance.is_alive()}")
-		await message.channel.send(f"arbitrage thread is {arbitrage_thread_kucoin.is_alive()}")
 
 	if message.content.startswith('help'):
 		await message.channel.send(f"command are : channel - money - order type - change order - exception")
@@ -87,16 +98,20 @@ async def on_message(message):
 
 
 def discord_arbitrage_run():
-	#global discord_thread, arbitrage_thread_binance, arbitrage_thread_kucoin
 
 	load_dotenv(dotenv_path=".env")
 
 	loop = asyncio.get_event_loop()
-	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin'))
-	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop))
+	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'get_list'))
+	#for i in range(0, 1300, 100):
+	#	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop,i))
+	#loop.create_task(Kucoin_trade.display_dataframe(loop))	
 	discord_bot = os.environ.get('discord_bot')
 	loop.create_task(client.start(discord_bot))
 	loop.run_forever()
+
+
+
 
 
 if __name__ == "__main__":

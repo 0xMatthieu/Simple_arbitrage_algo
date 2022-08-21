@@ -173,7 +173,7 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
 
 def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_investment, 
-                               transaction_brokerage, min_profit, exchange, price_list):
+                               transaction_brokerage, min_profit, exchange, price_list, job):
 	final_price = 0.0
 	start = time.time()
 	if(arbitrage_type == 'BUY_BUY_SELL'):
@@ -189,18 +189,29 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 	#print(f"profit for {scrip1}:{scrip2}:{scrip3} is {profit_loss} ")
 
 	if profit_loss>0:
-		time_elapsed = time.time() - start
-		text = f"{exchange} PROFIT-{datetime.now().strftime('%H:%M:%S')}:"\
-			f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}, Profit/Loss: {round(final_price-initial_investment,3)}"
-		Trade_algo.send_text(text, exchange = exchange)
-		text = f"time to perform calculation is {time_elapsed}"
-		Trade_algo.send_text(text, exchange = exchange)
-		place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
-		sb.Index += 1    
-		sk.Index += 1 
-		time_elapsed = time.time() - start
-		text = f"time to perform all arbitrage is {time_elapsed}"
-		Trade_algo.send_text(text, exchange = exchange)
+		if job == 'get_list':
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip1]
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip2]
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip3]
+			sk.arbitrage_opportunity = sk.arbitrage_opportunity.drop_duplicates(subset=['symbol'])
+			json = sk.arbitrage_opportunity.to_json('Arbitrage_oppotunities.json', orient = "records")
+			text = f"{exchange} opportunity found-{datetime.now().strftime('%H:%M:%S')}:"\
+				f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}"
+			Trade_algo.send_text(text, exchange = exchange)
+
+		elif job == 'do_arbitrage':
+			time_elapsed = time.time() - start
+			text = f"{exchange} PROFIT-{datetime.now().strftime('%H:%M:%S')}:"\
+				f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}, Profit/Loss: {round(final_price-initial_investment,3)}"
+			Trade_algo.send_text(text, exchange = exchange)
+			text = f"time to perform calculation is {time_elapsed}"
+			Trade_algo.send_text(text, exchange = exchange)
+			place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
+			sb.Index += 1    
+			sk.Index += 1 
+			time_elapsed = time.time() - start
+			text = f"time to perform all arbitrage is {time_elapsed}"
+			Trade_algo.send_text(text, exchange = exchange)
 
 if __name__ == "__main__":
    main()

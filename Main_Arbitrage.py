@@ -19,11 +19,11 @@ import pandas as pd
 from datetime import datetime
 import asyncio
 
-async def run_async_main(exchange = 'kucoin'):
+async def run_async_main(exchange = 'kucoin', job = 'get_list'):
 	main(exchange = exchange)
 
 
-def main(exchange = 'kucoin'):
+def main(exchange = 'kucoin', job = 'get_list'):
 	
 	#INVESTMENT_AMOUNT_DOLLARS = 100
 	MIN_PROFIT_DOLLARS = 5
@@ -66,6 +66,8 @@ def main(exchange = 'kucoin'):
 	Kucoin exchange
 	"""
 	if exchange == 'kucoin':
+		if job == 'get_list':
+			sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
 		#sk.init()
 		sk.do_real_order = True
 		text = f"{exchange} real order is {sk.do_real_order}"
@@ -89,11 +91,6 @@ def main(exchange = 'kucoin'):
 
 	Run_loop = True
 	Crypto_loop = 100000000
-
-	#Currency1 = sb.Currency('BTCUSDT', 'BTC')
-	#Binance_trade.start_to_get_data(Currency1)
-
-	#My_discord.init()
 
 	while Run_loop:
 
@@ -172,11 +169,12 @@ def main(exchange = 'kucoin'):
 				INVESTMENT_AMOUNT_DOLLARS = sk.current_money_available
 				INVESTMENT_AMOUNT_DOLLARS = 22
 				MIN_PROFIT_DOLLARS = 2
-				#Kucoin_trade.get_all_prices()
+
+				if job == 'get_list':
+					Kucoin_trade.get_all_prices()
 
 				
 				for row in sk.dict_all_combinations:
-				#for combination in wx_combinations_usdt:
 
 					base = row['base']
 					intermediate = row['intermediate']
@@ -189,13 +187,23 @@ def main(exchange = 'kucoin'):
 
 					#print(f"{s1} / {s2} / {s3}")
 
-					# Check triangular arbitrage for buy-buy-sell 
-					Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket)
-				    # Check triangular arbitrage for buy-sell-sell 
-					Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket)
-					Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
+
+					if job == 'get_list':
+						# Check triangular arbitrage for buy-buy-sell 
+						Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+						# Check triangular arbitrage for buy-sell-sell 
+						Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+
+					elif job == 'do_arbitrage':
+											# Check triangular arbitrage for buy-buy-sell 
+						Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+						# Check triangular arbitrage for buy-sell-sell 
+						Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+						Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
 
 
 					if sk.Index == Crypto_loop:
