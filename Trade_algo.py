@@ -35,7 +35,7 @@ def fetch_price_exchange(exchange, currency_name, price_list, buy_or_sell):
 	if exchange == 'binance':
 		price = Binance_trade.fetch_current_ticker_price(currency_name, price_list)
 	elif exchange == 'kucoin':
-		price =Kucoin_trade.fetch_current_ticker_price(currency_name, price_list, buy_or_sell)
+		price = Kucoin_trade.fetch_current_ticker_price(currency_name, price_list, buy_or_sell)
 	else:
 		print(f"fetch_price_exchange: wrong exchange name")
 		price = 'None'

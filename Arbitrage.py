@@ -190,9 +190,9 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 
 	if profit_loss>0:
 		if job == 'get_list':
-			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip1]
-			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip2]
-			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [pd.Timestamp.now(), scrip3]
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [scrip1, pd.Timestamp.now()]
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [scrip2, pd.Timestamp.now()]
+			sk.arbitrage_opportunity.loc[len(sk.arbitrage_opportunity)] = [scrip3, pd.Timestamp.now()]
 			sk.arbitrage_opportunity = sk.arbitrage_opportunity.drop_duplicates(subset=['symbol'])
 			json = sk.arbitrage_opportunity.to_json('Arbitrage_oppotunities.json', orient = "records")
 			text = f"{exchange} opportunity found-{datetime.now().strftime('%H:%M:%S')}:"\

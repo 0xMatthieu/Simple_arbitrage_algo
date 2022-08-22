@@ -22,6 +22,9 @@ import Main_Arbitrage
 import time
 
 
+discord_thread = Thread()
+arbitrage_thread_kucoin_list = Thread()
+arbitrage_thread_kucoin_arbitrage = Thread()
 client = discord.Client()
 load_dotenv(dotenv_path=".env")
 channel_id = int(os.environ.get('channel_id'))
@@ -51,6 +54,8 @@ def kucoin_value(text):
 		message = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
 	elif text == 'all':
 		message = sk.all_prices_websocket
+	elif text == 'list':
+		message = sk.arbitrage_opportunity
 	return message
 
 @client.event
@@ -82,6 +87,10 @@ async def on_message(message):
 		message_to_send = kucoin_value('all')
 		await message.channel.send(message_to_send)
 
+	if message.content.startswith('list'):
+		message_to_send = kucoin_value('list')
+		await message.channel.send(message_to_send)
+
 	if message.content.startswith('exception'):
 		raise Exception('an error occured')
 
@@ -96,20 +105,42 @@ async def on_message(message):
 		await message.channel.send(f"order type is {sb.do_real_order}. False means fake, True means real ")
 
 
-
 def discord_arbitrage_run():
 
 	load_dotenv(dotenv_path=".env")
-
+	discord_bot = os.environ.get('discord_bot')
+	
+	print('start thread kucoin list')
+	arbitrage_thread_binance = Thread(target=Main_Arbitrage.main, args=('kucoin','get_list',))
+	arbitrage_thread_binance.name = 'kucoin thread list'
+	arbitrage_thread_binance.start()
+	
+	print('start thread kucoin arbitrage')
 	loop = asyncio.get_event_loop()
-	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'get_list'))
-	loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'do_arbitrage'))
 	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop))
 	#loop.create_task(Kucoin_trade.display_dataframe(loop))	
-	discord_bot = os.environ.get('discord_bot')
-	loop.create_task(client.start(discord_bot))
-	loop.run_forever()
+	arbitrage_thread_kucoin = Thread(target=Main_Arbitrage.main, args=('kucoin','do_arbitrage',), daemon=True)
+	arbitrage_thread_kucoin.name = 'kucoin thread arbitrage'
+	arbitrage_thread_kucoin.start()
 
+	print('start thread discord')
+	#loop_discord = asyncio.new_event_loop()
+	loop.create_task(client.start(discord_bot))
+	discord_thread = Thread(target=loop.run_forever, daemon=True)
+	discord_thread.name = 'discord thread'
+	discord_thread.start()
+	
+
+	#loop = asyncio.get_event_loop()
+	#loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'get_list'))
+	#loop.create_task(Main_Arbitrage.run_async_main(exchange = 'kucoin', job = 'do_arbitrage'))
+	#loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(loop))
+	#loop.create_task(Kucoin_trade.display_dataframe(loop))	
+	
+	#loop.create_task(client.start(discord_bot))
+	#loop.run_forever()
+	#loop.run_until_complete(main(loop, discord_bot))
+	
 
 
 

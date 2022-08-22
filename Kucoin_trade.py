@@ -118,7 +118,9 @@ def get_all_prices():
 	#time.sleep(0.01)
 	try:
 		kucoin_prices = pd.DataFrame(sk.client.get_ticker()['ticker'])
+		kucoin_prices = kucoin_prices.rename(columns={"last": "price"})
 		sk.all_prices = kucoin_prices
+		#print(f'{sk.all_prices}')
 	except requests.exceptions.Timeout:
 		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin read price timeout has occured"
 		Trade_algo.send_text(text, exchange = 'kucoin')
@@ -127,7 +129,8 @@ def get_all_prices():
 		Trade_algo.send_text(text, exchange = 'kucoin')
 
 def prepare_price_list_for_websocket():
-	sk.all_prices_websocket = sk.arbitrage_opportunity.copy()
+	#sk.all_prices_websocket = sk.arbitrage_opportunity.copy()
+	sk.all_prices_websocket = pd.read_json('Arbitrage_oppotunities.json')
 	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['time'])
 	sk.all_prices_websocket['price'] = 0
 	sk.all_prices_websocket['symbolName'] = 0
@@ -166,10 +169,18 @@ def get_money(Currency = "USDT"):
 
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 	price_row = price_list.loc[price_list['symbol'] == currency_name]
-	if buy_or_sell == 'buy':
+	#print(f'{price_row}')
+
+	if price_row.empty:
+		price = 'None'
+	elif buy_or_sell == 'buy':
 		price = float(price_row["price"].item())
 	else:
 		price = float(price_row["price"].item())
+
+	if price_row.empty or price == 0:
+		price = float(1) #avoid zero division but no error handling
+	#print(f'{price}')
 	return price
 
 def update_time():

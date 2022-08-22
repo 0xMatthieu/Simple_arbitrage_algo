@@ -210,7 +210,7 @@ def main(exchange = 'kucoin', job = 'get_list'):
 
 			end = time.time()
 			time_elapsed = end - start
-			#print(f"{exchange} time elapsed is {time_elapsed}")
+			#print(f"{exchange}: {job} time elapsed is {time_elapsed} and price is {sk.all_prices_websocket}")
 			#Last_info_to_send = str(time_elapsed)
 			Run_loop = True
 
