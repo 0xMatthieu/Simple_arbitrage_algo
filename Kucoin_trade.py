@@ -160,7 +160,7 @@ def fiat_available(Currency = "USDT", Log = False):
 	sk.balance = round(sk.current_total - sk.total_money_available, 2)
 
 def get_money(Currency = "USDT"):
-	amount = 'Not available'
+	amount = None
 	if sk.api_key != None:
 		#time.sleep(0.01)
 		try:
@@ -178,13 +178,15 @@ def get_money(Currency = "USDT"):
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 	price_row = price_list.loc[price_list['symbol'] == currency_name]
 	#print(f'{price_row}')
-
-	if price_row.empty:
-		price = 'None'
-	elif buy_or_sell == 'buy':
-		price = float(price_row["price"].item())
-	else:
-		price = float(price_row["price"].item())
+	try:
+		if price_row.empty:
+			price = None
+		elif buy_or_sell == 'buy':
+			price = float(price_row["price"].item())
+		else:
+			price = float(price_row["price"].item())
+	except Exception as e:
+		price = None
 
 
 	if price_row.empty or price == 0:
@@ -198,7 +200,7 @@ def update_time():
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
 
-async def websocket_get_tickers_and_account_balance():
+async def websocket_get_tickers_and_account_balance(init_time):
 
 	async def compute(msg):
 		"""
@@ -250,7 +252,9 @@ async def websocket_get_tickers_and_account_balance():
 	# All tickers
 	#await ksm.subscribe('/market/ticker:all')
 
-	await asyncio.sleep(5)
+
+	await asyncio.sleep(init_time)
+
 	topic = '/market/ticker:'
 	#print(f'{start}')
 	#print(f'{start + LIMIT}')

@@ -124,7 +124,7 @@ def discord_arbitrage_run():
 
 	print('start thread discord')
 	loop = asyncio.get_event_loop()
-	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance())
+	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(10))
 	loop.create_task(client.start(discord_bot))
 	discord_thread = Thread(target=loop.run_forever)
 	discord_thread.name = 'discord thread'
