@@ -153,10 +153,12 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		place_buy_order(scrip1, s1_quantity, scrip_prices[scrip1], exchange, True)
 		#time.sleep(0.1)
 		s1_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip2, exchange = exchange, order = "buy")
+		s1_quantity = Trade_algo.calculate_amount(s1_quantity, initial_amount/scrip_prices[scrip1]) #can be optimized
 		s2_quantity = s1_quantity/scrip_prices[scrip2]
 		place_buy_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, True)
 		#time.sleep(0.1)
 		s2_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
+		s2_quantity = Trade_algo.calculate_amount(s2_quantity, s1_quantity/scrip_prices[scrip2]) #can be optimized
 		s3_quantity = s2_quantity
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
         
@@ -165,15 +167,17 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		place_buy_order(scrip1, s1_quantity, scrip_prices[scrip1], exchange, True)
 		#time.sleep(0.1)
 		s1_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip2, exchange = exchange, order = "sell")
+		s1_quantity = Trade_algo.calculate_amount(s1_quantity, initial_amount/scrip_prices[scrip1]) #can be optimized
 		s2_quantity = s1_quantity
 		place_sell_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, True)
 		#time.sleep(0.1)
 		s3_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
+		s3_quantity = Trade_algo.calculate_amount(s3_quantity, s2_quantity * scrip_prices[scrip2]) #can be optimized
 		#s3_quantity = s2_quantity * scrip_prices[scrip2]
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
 
 def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_investment, 
-                               transaction_brokerage, min_profit, exchange, price_list, job, do_real_order):
+                               transaction_brokerage, min_profit, exchange, price_list, job):
 	final_price = 0.0
 	start = time.time()
 	if(arbitrage_type == 'BUY_BUY_SELL'):
@@ -202,16 +206,17 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 		elif job == 'do_arbitrage':
 			time_elapsed = time.time() - start
 			text = f"{exchange} PROFIT-{datetime.now().strftime('%H:%M:%S')}:"\
-				f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}, Profit/Loss: {round(final_price-initial_investment,3)}"
+				f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}, Profit/Loss: {round(final_price-initial_investment,3)}"\
+				f"{scrip1}: {scrip_prices[scrip1]}, {scrip2}: {scrip_prices[scrip2]}, {scrip3}: {scrip_prices[scrip3]}"
 			Trade_algo.send_text(text, exchange = exchange)
-			text = f"time to perform calculation is {time_elapsed}"
+			text = f"{job}: time to perform calculation is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)
-			if do_real_order:
-				place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
+			place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
+			#TODO: erase or change
 			sb.Index += 1    
 			sk.Index += 1 
 			time_elapsed = time.time() - start
-			text = f"time to perform all arbitrage is {time_elapsed}"
+			text = f"{job}: time to perform all arbitrage is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)
 
 if __name__ == "__main__":

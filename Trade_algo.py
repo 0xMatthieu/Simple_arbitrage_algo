@@ -89,6 +89,13 @@ def fetch_amount_exchange_order(scrip, exchange, order):
 
 	return amount
 
+def calculate_amount(amount_exchange, amount_calculated):
+	if amount_exchange == 'Not available':
+		amount = amount_calculated
+	else:
+		amount = amount_exchange
+
+	return amount
 
 if __name__ == "__main__":
    main()

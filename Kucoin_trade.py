@@ -163,8 +163,16 @@ def get_money(Currency = "USDT"):
 	amount = 'Not available'
 	if sk.api_key != None:
 		#time.sleep(0.01)
-		value = pd.DataFrame(sk.client.get_accounts())
-		amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
+		try:
+			value = pd.DataFrame(sk.client.get_accounts())
+			amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
+		except Exception as e:
+			if sk.do_real_order == True:
+				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
+				Trade_algo.send_text(text, exchange = 'kucoin')
+
+				#else do nothing this error can happen when do order is False cause trade has not been set and amount is Null
+
 	return amount
 
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
@@ -178,8 +186,10 @@ def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 	else:
 		price = float(price_row["price"].item())
 
+
 	if price_row.empty or price == 0:
-		price = float(1) #avoid zero division but no error handling
+		#price = float(1) #avoid zero division but no error handling
+		price = None
 	#print(f'{price}')
 	return price
 
