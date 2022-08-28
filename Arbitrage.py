@@ -173,7 +173,7 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
 
 def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_investment, 
-                               transaction_brokerage, min_profit, exchange, price_list, job):
+                               transaction_brokerage, min_profit, exchange, price_list, job, do_real_order):
 	final_price = 0.0
 	start = time.time()
 	if(arbitrage_type == 'BUY_BUY_SELL'):
@@ -197,7 +197,7 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 			json = sk.arbitrage_opportunity.to_json('Arbitrage_oppotunities.json', orient = "records")
 			text = f"{exchange} opportunity found-{datetime.now().strftime('%H:%M:%S')}:"\
 				f"{arbitrage_type}, {scrip1},{scrip2},{scrip3}"
-			Trade_algo.send_text(text, exchange = exchange)
+			#Trade_algo.send_text(text, exchange = exchange)
 
 		elif job == 'do_arbitrage':
 			time_elapsed = time.time() - start
@@ -206,7 +206,8 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 			Trade_algo.send_text(text, exchange = exchange)
 			text = f"time to perform calculation is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)
-			place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
+			if do_real_order:
+				place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
 			sb.Index += 1    
 			sk.Index += 1 
 			time_elapsed = time.time() - start

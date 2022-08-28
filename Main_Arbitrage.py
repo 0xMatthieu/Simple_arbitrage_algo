@@ -40,8 +40,8 @@ def main(exchange = 'kucoin', job = 'get_list'):
 	"""
 	All exchanges
 	"""
-	sb.init()
-	sk.init()
+	#sb.init()
+	#sk.init()
 
 	"""
 	Binance exchange
@@ -68,7 +68,7 @@ def main(exchange = 'kucoin', job = 'get_list'):
 	if exchange == 'kucoin':
 		sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
 		#sk.init()
-		sk.do_real_order = True
+		sk.do_real_order = False
 		text = f"{exchange} real order is {sk.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Kucoin_trade.get_all_pairs()
@@ -150,10 +150,10 @@ def main(exchange = 'kucoin', job = 'get_list'):
 
 					# Check triangular arbitrage for buy-buy-sell 
 					Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sb.all_prices)
+											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sb.all_prices, job, sb.do_real_order)
 				    # Check triangular arbitrage for buy-sell-sell 
 					Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
-											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sb.all_prices)
+											BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sb.all_prices, job, sb.do_real_order)
 					Binance_trade.fiat_available(Log = sb.order_done_current_cycle)
 
 
@@ -190,18 +190,18 @@ def main(exchange = 'kucoin', job = 'get_list'):
 					if job == 'get_list':
 						# Check triangular arbitrage for buy-buy-sell 
 						Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
-												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job, sk.do_real_order)
 						# Check triangular arbitrage for buy-sell-sell 
 						Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
-												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job, sk.do_real_order)
 
 					elif job == 'do_arbitrage':
 											# Check triangular arbitrage for buy-buy-sell 
 						Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
-												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job, sk.do_real_order)
 						# Check triangular arbitrage for buy-sell-sell 
 						Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
-												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+												BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job, sk.do_real_order)
 						Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
 
 

@@ -188,7 +188,7 @@ def update_time():
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
 
-async def websocket_get_tickers_and_account_balance(loop):
+async def websocket_get_tickers_and_account_balance():
 
 	async def compute(msg):
 		"""
@@ -208,6 +208,7 @@ async def websocket_get_tickers_and_account_balance(loop):
 			print(f'got account balance:{msg["data"]}')
 		"""
 		sk.msg = msg
+		#print(f'{sk.msg}')
 		#update price in price list
 		symbol=msg['topic'].split(':')[1]
 		#symbol=msg['subject']
@@ -222,8 +223,11 @@ async def websocket_get_tickers_and_account_balance(loop):
 		task = asyncio.create_task(compute(msg))
 		await task
 
-
+	
+	print("start ksm")
+	loop = asyncio.get_event_loop()
 	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	print(f'{ksm}')
 	#ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private=True)
 
 	# Note: try these one at a time, if all are on you will see a lot of output
@@ -236,6 +240,7 @@ async def websocket_get_tickers_and_account_balance(loop):
 	# All tickers
 	#await ksm.subscribe('/market/ticker:all')
 
+	await asyncio.sleep(5)
 	topic = '/market/ticker:'
 	#print(f'{start}')
 	#print(f'{start + LIMIT}')
@@ -253,8 +258,9 @@ async def websocket_get_tickers_and_account_balance(loop):
 	
 
 
-async def display_dataframe(loop):
+async def display_dataframe():
 	
+	loop = asyncio.get_event_loop()
 	while True:
 		print("sleeping to keep loop open")
 		#update_time()
@@ -263,7 +269,7 @@ async def display_dataframe(loop):
 		#text = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
 		text = sk.all_prices_websocket
 		print(f'{text}')
-		await asyncio.sleep(5, loop=loop)
+		await asyncio.sleep(5)
 	
 
 def start_websocket():

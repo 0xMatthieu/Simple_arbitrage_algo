@@ -15,7 +15,7 @@ def init():
     fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity
 
     #general
-    do_real_order = True
+    do_real_order = False
     test = False
     Currency_fiat = 'EUR'
     total_money_available = 0
