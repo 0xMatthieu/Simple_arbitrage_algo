@@ -17,3 +17,19 @@ There is 3 different functions executed:
   
   ![image](https://user-images.githubusercontent.com/111059326/186150000-cbbfaf66-9fcf-4032-8096-313703da779c.png)
 
+
+
+# current situation
+
+problem is: how to run asychrone or in parallel the software to speed up the whole process
+Kucoin_trade.websocket_get_tickers_and_account_balance(0) use asyncio by default, it comes from an asbraction library (python-kucoin) which implements a websocket reading stream with asyncio
+The fact that a mandatory part implements asyncio creates some issues
+ - pandas is not asynchone by design
+ - using thread in python is concurrent and not parallel, means that it slow the websocket read function anf lead after few seconds to lost the connection with the stream (I didn't find the root cause)
+ - using concurrent futures seems to not start the web socket read while arbitrage function is working quite well 
+
+Currently the main code is in My_discord.py in discord_arbitrage_run(). 
+
+A solution might be to use asyncio to run asyn tasks and run_in_executor for arbitrage (which includes pandas) but after some tests it seems that the websocket stream is never awaited. It is fine cause I would like to read the stream as fast as possible but also run the run arbitrage function with job "do_arbitrage" to perform arbitrage and also update_list to use the REST api to find new opportunities.
+
+

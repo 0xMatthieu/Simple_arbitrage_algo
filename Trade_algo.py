@@ -43,7 +43,7 @@ def fetch_price_exchange(exchange, currency_name, price_list, buy_or_sell):
 	return price
 
 def send_text(text, exchange):
-	print(text)
+	print(text, flush = True)
 	logging.critical(text)
 	if exchange == 'binance':
 		if sb.Last_info_to_send == "":

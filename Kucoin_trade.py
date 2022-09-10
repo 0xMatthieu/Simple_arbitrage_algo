@@ -203,32 +203,18 @@ def update_time():
 async def websocket_get_tickers_and_account_balance(init_time):
 
 	async def compute(msg):
-		"""
-		if msg['topic'] == '/market/ticker:BTC-USDT':
-			print(f'got ETH-USDT tick:{msg["data"]}')
-			print(f'ETH-USDT tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
 
-		if msg['topic'] == '/market/ticker:MANA-BTC':
-			print(f'got MANA-BTC tick:{msg["data"]["price"]}')
-			print(f'MANA-BTC tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
-			sk.msg = msg
-
-		elif msg['topic'] == '/market/ticker:all':
-			#print(f'got all market snapshot:{msg}')
-			#print(f'all tickers tick time between {int(time.time() * 1000) - int(msg["data"]["time"])}', flush=True)
-		elif msg['topic'] == '/account/balance':
-			print(f'got account balance:{msg["data"]}')
-		"""
 		sk.msg = msg
 		#print(f'{sk.msg}')
 		#update price in price list
 		symbol=msg['topic'].split(':')[1]
+		print(f'{symbol}')
 		#symbol=msg['subject']
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
-		#sk.all_prices_websocket.loc[sk.all_prices_websocket['lastUpdateTime'] != 0]
+
 
 	# callback function that receives messages from the socket
 	async def handle_evt(msg):
@@ -244,13 +230,9 @@ async def websocket_get_tickers_and_account_balance(init_time):
 
 	# Note: try these one at a time, if all are on you will see a lot of output
 
-	# ETH-USDT Market Ticker
-	#await ksm.subscribe('/market/ticker:BTC-USDT')
-	#await ksm.subscribe('/market/ticker:MANA-BTC')
 	# Account balance - must be authenticated
 	#await ksm_private.subscribe('/account/balance')
-	# All tickers
-	#await ksm.subscribe('/market/ticker:all')
+
 
 
 	await asyncio.sleep(init_time)
