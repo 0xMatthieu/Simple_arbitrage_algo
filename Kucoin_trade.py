@@ -253,24 +253,51 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	await ksm.subscribe(topic)
 	
 
+async def websocket_get_all_tickers(init_time):
 
-async def display_dataframe():
+	async def compute(msg):
+
+		sk.msg = msg
+		#print(f'{sk.msg}')
+		#update price in price list
+		symbol=msg['topic'].split(':')[1]
+		print(f'{symbol}')
+		#symbol=msg['subject']
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
+		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
+
+
+	# callback function that receives messages from the socket
+	async def handle_evt(msg):
+		task = asyncio.create_task(compute(msg))
+		await task
+
 	
+	print("start ksm all tickers")
 	loop = asyncio.get_event_loop()
-	while True:
-		print("sleeping to keep loop open")
-		#update_time()
-		#current_time = int(time.time() * 1000)
-		#sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'period'] = current_time - int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'lastUpdateTime'])
-		#text = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']
-		text = sk.all_prices_websocket
-		print(f'{text}')
-		await asyncio.sleep(5)
-	
+	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	print(f'{ksm}')
 
-def start_websocket():
-	# for private topics such as '/account/balance' pass private=True
-	loop.run_until_complete(websocket_get_tickers_and_account_balance())
+	await asyncio.sleep(init_time)
+
+	topic = '/market/ticker:'
+	#print(f'{start}')
+	#print(f'{start + LIMIT}')
+	for row in tqdm(sk.all_prices_websocket.itertuples()):
+		#print(f'{index}')
+		if row[0] == 0:
+			topic = topic + str(row[1])
+		elif row[0] > 0:
+			topic = topic + ',' + str(row[1])
+	print(f'{topic}')
+		#sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+		#await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
+	
+	await ksm.subscribe(topic)
+
+
 
 if __name__ == "__main__":
    main()

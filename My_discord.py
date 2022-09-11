@@ -110,19 +110,23 @@ def run_asyncio_functions():
 	print('load env')	
 	load_dotenv(dotenv_path=".env")
 	discord_bot = os.environ.get('discord_bot')
-	loop = asyncio.get_event_loop()
+	loop = asyncio.new_event_loop()
 	print(f'get loop {loop}')	
 	kucoin_task = loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(0))
 	discord_task = loop.create_task(client.start(discord_bot))
 
 	print(f'start client {client}')
-	#loop.run_forever()
+	loop.run_forever()
 
-async def run_arbitrage():
-	result = await loop.run_in_executor(
-			executor, Main_Arbitrage.update_list('kucoin'))
-	result = await loop.run_in_executor(
-			executor, Main_Arbitrage.run('kucoin','do_arbitrage'))
+def update_list_arbitrage():
+	print('run async arbitrage')
+	while True:
+		Main_Arbitrage.run('kucoin','get_list', 2)
+
+def run_arbitrage():
+	print('run async arbitrage')
+	while True:
+		Main_Arbitrage.run('kucoin','do_arbitrage')
 
 
 def discord_arbitrage_run():
@@ -158,16 +162,17 @@ def discord_arbitrage_run():
 	#	Main_Arbitrage.run('kucoin','do_arbitrage')
 
 
-	
+	"""
 	print('load env')	
 	load_dotenv(dotenv_path=".env")
 	discord_bot = os.environ.get('discord_bot')
 	loop = asyncio.get_event_loop()
-	loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(0))
+	loop.create_task(run_arbitrage())
+	#loop.create_task(Kucoin_trade.websocket_get_tickers_and_account_balance(0))
 	loop.create_task(client.start(discord_bot))
 	print(f'start client {client}')
 
-	loop.create_task(run_arbitrage())
+	
 	#loop.create_task(Main_Arbitrage.run('kucoin','get_list'))
 	#loop.create_task(Main_Arbitrage.run('kucoin','do_arbitrage'))
 	
@@ -175,41 +180,51 @@ def discord_arbitrage_run():
 	print(f'get loop {loop}')	
 
 	loop.run_forever()
-	
-
 	"""
+
+	
 	
 	with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
 		
-		print('start thread discord')
 		
-		loop = asyncio.get_event_loop()
-		result = await loop.run_in_executor(
-			executor, run_asyncio_functions)
-
-		
-		futures.append(executor.submit(
-			run_asyncio_functions,
-		))
-		
+		"""
 		print('start thread kucoin list')
 		executor.submit(
-			run_arbitrage,
-			'kucoin','get_list'
+			Main_Arbitrage.update_list,
+			'kucoin'
 		)
 		
 		print('start thread kucoin arbitrage')	
 		executor.submit(
-			run_arbitrage,
+			Main_Arbitrage.run,
 			'kucoin','do_arbitrage'
 		)
+		"""
+		print('start thread kucoin arbitrage')
+		executor.submit(
+			run_arbitrage
+		)
+
+		
+		print('start thread kucoin list')
+		executor.submit(
+			update_list_arbitrage
+		)
+		
+
+		print('start thread discord')
+		futures.append(executor.submit(
+			run_asyncio_functions,
+		))
+		
+
 		
 		
 		
 
 		#for future in futures:
 		#	future.result()
-	
+	"""
 	
 	print('start thread kucoin list')
 	arbitrage_thread_binance = Thread(target=Main_Arbitrage.main, args=('kucoin','get_list',))

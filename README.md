@@ -32,4 +32,16 @@ Currently the main code is in My_discord.py in discord_arbitrage_run().
 
 A solution might be to use asyncio to run asyn tasks and run_in_executor for arbitrage (which includes pandas) but after some tests it seems that the websocket stream is never awaited. It is fine cause I would like to read the stream as fast as possible but also run the run arbitrage function with job "do_arbitrage" to perform arbitrage and also update_list to use the REST api to find new opportunities.
 
+# update 11/09/2022
+
+New software with concurrent.futures
+Problems to fix:
+- share settings_kucoin data between files
+- If REST API used, lead to an error
+  Comment to avoid
+
+    print('start thread kucoin list')
+    executor.submit(
+      update_list_arbitrage
+    )
 
