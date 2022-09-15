@@ -120,8 +120,8 @@ def run_asyncio_functions():
 
 def update_list_arbitrage():
 	print('run async arbitrage')
-	while True:
-		Main_Arbitrage.run('kucoin','get_list', 2)
+	#while True:
+	#	Main_Arbitrage.run('kucoin','get_list')
 
 def run_arbitrage():
 	print('run async arbitrage')

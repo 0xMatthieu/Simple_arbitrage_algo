@@ -100,11 +100,9 @@ def update_list(exchange = 'kucoin'):
 		sk.df_all_combinations, sk.df_unique_currencies, sk.dict_all_combinations = Arbitrage.get_crypto_combinations(sk.df_all_pairs, "USDT", sk.df_all_combinations)
 		Kucoin_trade.prepare_price_list_for_websocket()
 
-def run(exchange = 'kucoin', job = 'get_list', delay = 0):
+def run(exchange = 'kucoin', job = 'get_list'):
 
 	start = time.time()
-
-	time.sleep(delay)
 
 	"""
 	Binance exchange
