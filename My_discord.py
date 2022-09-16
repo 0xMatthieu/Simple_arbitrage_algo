@@ -142,14 +142,14 @@ def discord_arbitrage_run():
 
 	thread2 = Thread(target=run_asyncio_functions)
 	thread2.start()
-
+	
 	thread3 = Thread(target=run_arbitrage)
 	thread3.start()
-
+	"""
 	thread4 = Thread(target=update_list_arbitrage)
 	thread4.start()
 	
-	"""
+	
 	with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
 		
 		
@@ -168,7 +168,7 @@ def discord_arbitrage_run():
 		#executor.submit(
 		#	run_asyncio_functions,
 		#)
-		"""
+	"""
 	
 if __name__ == "__main__":
 	discord_arbitrage_run()

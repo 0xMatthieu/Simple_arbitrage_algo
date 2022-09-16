@@ -153,6 +153,8 @@ def run(exchange = 'kucoin', job = 'get_list'):
 
 		if job == 'get_list':
 			Kucoin_trade.get_all_prices()
+		elif job == 'do_arbitrage':
+			Kucoin_trade.check_if_websocket_is_running()
 
 		
 		for row in sk.dict_all_combinations:

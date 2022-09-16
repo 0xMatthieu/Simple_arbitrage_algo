@@ -137,6 +137,7 @@ def prepare_price_list_for_websocket():
 	sk.all_prices_websocket['lastUpdateTime'] = 0
 	sk.all_prices_websocket['period'] = 0
 	sk.all_prices_websocket['index'] = 0
+	sk.all_prices_websocket['_index_running'] = 0
 
 	"""
 	get_all_prices()
@@ -199,6 +200,17 @@ def update_time():
 	current_time = int(time.time() * 1000)
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
+
+def check_if_websocket_is_running():
+	#check BTC
+	if int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > 0:
+		if int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > \
+		int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running']):
+			#means everything ok
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'] = \
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']
+		else:
+			sk.run_algo = False
 
 async def websocket_get_tickers_and_account_balance(init_time):
 
