@@ -104,6 +104,8 @@ def run(exchange = 'kucoin', job = 'get_list'):
 
 	start = time.time()
 
+	print(f"{exchange}: {job} dict is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+
 	"""
 	Binance exchange
 	"""
@@ -145,7 +147,7 @@ def run(exchange = 'kucoin', job = 'get_list'):
 	if exchange == 'kucoin' and sk.run_algo == True:
 		sk.order_done_current_cycle = False
 		INVESTMENT_AMOUNT_DOLLARS = sk.current_money_available
-		INVESTMENT_AMOUNT_DOLLARS = 22
+		INVESTMENT_AMOUNT_DOLLARS = 30
 		MIN_PROFIT_DOLLARS = 2
 		BROKERAGE_PER_TRANSACTION_PERCENT = 0.1
 
@@ -187,7 +189,7 @@ def run(exchange = 'kucoin', job = 'get_list'):
 
 	end = time.time()
 	time_elapsed = end - start
-	#print(f"{exchange}: {job} time elapsed is {time_elapsed}")
+	print(f"{exchange}: {job} time elapsed is {time_elapsed}")
 	#Last_info_to_send = str(time_elapsed)
 
 

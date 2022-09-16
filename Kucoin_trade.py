@@ -209,7 +209,8 @@ async def websocket_get_tickers_and_account_balance(init_time):
 		#update price in price list
 		symbol=msg['topic'].split(':')[1]
 		#symbol=msg['subject']
-		#print(f'{symbol}')
+		print(f'{symbol}')
+		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
@@ -232,8 +233,6 @@ async def websocket_get_tickers_and_account_balance(init_time):
 
 	# Account balance - must be authenticated
 	#await ksm_private.subscribe('/account/balance')
-
-
 
 	await asyncio.sleep(init_time)
 
