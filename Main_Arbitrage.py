@@ -15,9 +15,13 @@ import Arbitrage
 import time
 import logging
 import pandas as pd
+import numpy as np
 
 from datetime import datetime
 import asyncio
+import concurrent.futures
+import psutil
+
 
 
 def init(exchange = 'kucoin', job = 'get_list'):
@@ -100,11 +104,54 @@ def update_list(exchange = 'kucoin'):
 		sk.df_all_combinations, sk.df_unique_currencies, sk.dict_all_combinations = Arbitrage.get_crypto_combinations(sk.df_all_pairs, "USDT", sk.df_all_combinations)
 		Kucoin_trade.prepare_price_list_for_websocket()
 
+def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list'):
+
+	sk.order_done_current_cycle = False
+	INVESTMENT_AMOUNT_DOLLARS = sk.current_money_available
+	INVESTMENT_AMOUNT_DOLLARS = 30
+	MIN_PROFIT_DOLLARS = 2
+	BROKERAGE_PER_TRANSACTION_PERCENT = 0.1
+
+	if dict_crypto is not None:
+		for row in dict_crypto:
+
+			base = row['base']
+			intermediate = row['intermediate']
+			ticker = row['ticker']
+
+
+			s1 = row['first_pair']			# Eg: BTC/USDT
+			s2 = row['second_pair']			# Eg: ETH/BTC
+			s3 = row['third_pair']			# Eg: ETH/USDT 
+
+			#print(f"{s1} / {s2} / {s3}")
+
+
+			if job == 'get_list':
+				# Check triangular arbitrage for buy-buy-sell 
+				Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
+										BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+				# Check triangular arbitrage for buy-sell-sell 
+				Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
+										BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices, job)
+
+			elif job == 'do_arbitrage':
+									# Check triangular arbitrage for buy-buy-sell 
+				Arbitrage.perform_triangular_arbitrage(s1,s2,s3,'BUY_BUY_SELL',INVESTMENT_AMOUNT_DOLLARS,
+										BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+				# Check triangular arbitrage for buy-sell-sell 
+				Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
+										BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
+				Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
+
 def run(exchange = 'kucoin', job = 'get_list'):
 
 	start = time.time()
 
-	print(f"{exchange}: {job} dict is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+	num_procs  = psutil.cpu_count(logical=False)
+
+	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+	#print(f"{exchange}: {job} client is {sk.client}")
 
 	"""
 	Binance exchange
@@ -145,18 +192,28 @@ def run(exchange = 'kucoin', job = 'get_list'):
 	Kucoin exchange
 	"""
 	if exchange == 'kucoin' and sk.run_algo == True:
-		sk.order_done_current_cycle = False
-		INVESTMENT_AMOUNT_DOLLARS = sk.current_money_available
-		INVESTMENT_AMOUNT_DOLLARS = 30
-		MIN_PROFIT_DOLLARS = 2
-		BROKERAGE_PER_TRANSACTION_PERCENT = 0.1
+		
 
 		if job == 'get_list':
 			Kucoin_trade.get_all_prices()
 		elif job == 'do_arbitrage':
 			Kucoin_trade.check_if_websocket_is_running()
 
-		
+		splitted_df = np.array_split(sk.dict_all_combinations, num_procs)
+
+		df_results = []
+
+		with concurrent.futures.ProcessPoolExecutor(max_workers=num_procs) as executor:
+			results = [ executor.submit(perform_arbitrage,dict_crypto=df, exchange=exchange, job=job) for df in splitted_df]
+			for result in concurrent.futures.as_completed(results):
+				try:
+					df_results.append(result.result())
+				except Exception as ex:
+					print(str(ex))
+					pass
+
+
+		"""
 		for row in sk.dict_all_combinations:
 
 			base = row['base']
@@ -187,7 +244,7 @@ def run(exchange = 'kucoin', job = 'get_list'):
 				Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
 										BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, sk.all_prices_websocket, job)
 				Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
-
+		"""
 
 	end = time.time()
 	time_elapsed = end - start

@@ -221,7 +221,7 @@ async def websocket_get_tickers_and_account_balance(init_time):
 		#update price in price list
 		symbol=msg['topic'].split(':')[1]
 		#symbol=msg['subject']
-		print(f'{symbol}')
+		#print(f'{symbol}')
 		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
 		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]

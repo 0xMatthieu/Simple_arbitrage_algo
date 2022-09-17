@@ -145,10 +145,15 @@ def discord_arbitrage_run():
 	
 	thread3 = Thread(target=run_arbitrage)
 	thread3.start()
+
 	"""
 	thread4 = Thread(target=update_list_arbitrage)
 	thread4.start()
+	"""
+
 	
+	#Note: seems that before creating process, global variables can be pass to the process
+	"""
 	
 	with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
 		
