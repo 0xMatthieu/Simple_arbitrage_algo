@@ -20,7 +20,15 @@ import Binance_trade
 import Kucoin_trade
 import Main_Arbitrage
 import time
-import concurrent.futures
+import concurrent.futures                                                                                     
+try:
+	import psutil
+except:
+	pass
+
+
+import ctypes
+import numpy as np
 
 
 client = discord.Client()
@@ -124,10 +132,11 @@ def update_list_arbitrage():
 	while True:
 		Main_Arbitrage.run('kucoin','get_list')
 
-def run_arbitrage():
+def run_arbitrage(num_procs = 2):
 	print('run async arbitrage')
+
 	while True:
-		Main_Arbitrage.run('kucoin','do_arbitrage')
+		Main_Arbitrage.run('kucoin','do_arbitrage', num_procs)
 
 
 def discord_arbitrage_run():
@@ -135,16 +144,22 @@ def discord_arbitrage_run():
 	sb.init()
 	sk.init()
 
+	try:
+		num_procs = psutil.cpu_count(logical=True)
+	except:
+		num_procs = 4
+
 	Main_Arbitrage.init('kucoin','get_list')
+
 	
 	thread = Thread(target=run_discord_bot)
 	thread.start()
 
-	thread2 = Thread(target=run_asyncio_functions)
-	thread2.start()
+	#thread2 = Thread(target=run_asyncio_functions)
+	#thread2.start()
 	
-	thread3 = Thread(target=run_arbitrage)
-	thread3.start()
+	#thread3 = Thread(target=run_arbitrage)
+	#thread3.start()
 
 	"""
 	thread4 = Thread(target=update_list_arbitrage)
@@ -153,6 +168,30 @@ def discord_arbitrage_run():
 
 	
 	#Note: seems that before creating process, global variables can be pass to the process
+
+	results = []
+
+	with concurrent.futures.ProcessPoolExecutor(max_workers=num_procs) as executor:
+
+		results.append(executor.submit(
+			run_arbitrage, num_procs
+		))
+
+		#results.append(executor.submit(
+		#	run_discord_bot
+		#))
+
+		results.append(executor.submit(
+			run_asyncio_functions
+		))
+
+		for result in concurrent.futures.as_completed(results):
+			try:
+				pass
+			except Exception as ex:
+				print(str(ex))
+				pass
+
 	"""
 	
 	with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:

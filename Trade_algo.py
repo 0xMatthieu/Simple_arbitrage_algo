@@ -70,6 +70,17 @@ def fetch_amount_exchange(currency, exchange):
 
 	return amount
 
+def fetch_amount_exchange_order_websocket(scrip, exchange, order):
+	if exchange == 'binance':
+		amount = None
+	elif exchange == 'kucoin':
+		amount = Kucoin_trade.get_quantity_websocket(symbol = scrip)
+	else:
+		print(f"fetch_amount_exchange: wrong exchange name")
+		amount = 'None'
+
+	return amount
+
 def fetch_amount_exchange_order(scrip, exchange, order):
 	if exchange == 'binance':
 		scrip_splitted = scrip.split("/")

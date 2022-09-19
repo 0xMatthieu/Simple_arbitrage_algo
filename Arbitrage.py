@@ -41,14 +41,6 @@ def get_crypto_combinations(pairs, base, df_all_combinations):
 								,"second_pair":[row2['symbol']]
 								,"third_pair":[row3['symbol']]
 							})
-							#print(f"combination {combination}")
-							#add only combination with fiat allowed, delete others
-							#for fiat in sb.fiat_list:
-							#	if combination['base'][0] == fiat or combination['intermediate'][0] == fiat or combination['ticker'][0] == fiat: 
-							#		add_to_list = False
-							#for crypto in sb.crypto_list:
-							#	if combination['base'][0] == crypto or combination['intermediate'][0] == crypto or combination['ticker'][0] == crypto: 
-							#		add_to_list = False
 							if row['status'] != 'TRADING' or row2['status'] != 'TRADING' or row3['status'] != 'TRADING':
 								add_to_list = False
 
@@ -152,12 +144,12 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		s1_quantity = initial_amount/scrip_prices[scrip1]
 		place_buy_order(scrip1, s1_quantity, scrip_prices[scrip1], exchange, True)
 		#time.sleep(0.1)
-		s1_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip2, exchange = exchange, order = "buy")
+		s1_quantity = Trade_algo.fetch_amount_exchange_order_websocket(scrip = scrip2, exchange = exchange, order = "buy")
 		s1_quantity = Trade_algo.calculate_amount(s1_quantity, initial_amount/scrip_prices[scrip1]) #can be optimized
 		s2_quantity = s1_quantity/scrip_prices[scrip2]
 		place_buy_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, True)
 		#time.sleep(0.1)
-		s2_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
+		s2_quantity = Trade_algo.fetch_amount_exchange_order_websocket(scrip = scrip3, exchange = exchange, order = "sell")
 		s2_quantity = Trade_algo.calculate_amount(s2_quantity, s1_quantity/scrip_prices[scrip2]) #can be optimized
 		s3_quantity = s2_quantity
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
@@ -166,12 +158,12 @@ def place_trade_orders(type, scrip1, scrip2, scrip3, initial_amount, scrip_price
 		s1_quantity = initial_amount/scrip_prices[scrip1]
 		place_buy_order(scrip1, s1_quantity, scrip_prices[scrip1], exchange, True)
 		#time.sleep(0.1)
-		s1_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip2, exchange = exchange, order = "sell")
+		s1_quantity = Trade_algo.fetch_amount_exchange_order_websocket(scrip = scrip2, exchange = exchange, order = "sell")
 		s1_quantity = Trade_algo.calculate_amount(s1_quantity, initial_amount/scrip_prices[scrip1]) #can be optimized
 		s2_quantity = s1_quantity
 		place_sell_order(scrip2, s2_quantity, scrip_prices[scrip2], exchange, True)
 		#time.sleep(0.1)
-		s3_quantity = Trade_algo.fetch_amount_exchange_order(scrip = scrip3, exchange = exchange, order = "sell")
+		s3_quantity = Trade_algo.fetch_amount_exchange_order_websocket(scrip = scrip3, exchange = exchange, order = "sell")
 		s3_quantity = Trade_algo.calculate_amount(s3_quantity, s2_quantity * scrip_prices[scrip2]) #can be optimized
 		#s3_quantity = s2_quantity * scrip_prices[scrip2]
 		place_sell_order(scrip3, s3_quantity, scrip_prices[scrip3], exchange, True)
@@ -213,8 +205,12 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 			Trade_algo.send_text(text, exchange = exchange)
 			place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
 			#TODO: erase or change
-			sb.Index += 1    
-			sk.Index += 1 
+			########
+			########
+			#test
+			sk.run_algo = False
+			########
+			########
 			time_elapsed = time.time() - start
 			text = f"{job}: time to perform all arbitrage is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)

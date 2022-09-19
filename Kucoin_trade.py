@@ -132,12 +132,19 @@ def prepare_price_list_for_websocket():
 	#sk.all_prices_websocket = sk.arbitrage_opportunity.copy()
 	sk.all_prices_websocket = pd.read_json('Arbitrage_oppotunities.json')
 	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['time'])
+	sk.df_all_pairs_arbitrage = sk.all_prices_websocket.copy()
+	sk.df_all_pairs_arbitrage.insert(0, 'baseAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[0])
+	sk.df_all_pairs_arbitrage.insert(1, 'quoteAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[1])
+	sk.df_all_pairs_arbitrage['status'] = 'TRADING'
+
 	sk.all_prices_websocket['price'] = 0
 	sk.all_prices_websocket['symbolName'] = 0
+	sk.all_prices_websocket['current_quantity'] = 0
 	sk.all_prices_websocket['lastUpdateTime'] = 0
 	sk.all_prices_websocket['period'] = 0
 	sk.all_prices_websocket['index'] = 0
 	sk.all_prices_websocket['_index_running'] = 0
+
 
 	"""
 	get_all_prices()
@@ -176,7 +183,14 @@ def get_money(Currency = "USDT"):
 
 	return amount
 
+def get_quantity_websocket(symbol = "USDT"):
+	amount = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity']
+	return amount
+
+
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
+	price = float(price_list.loc[price_list['symbol'] == currency_name]["price"].item())
+	"""
 	price_row = price_list.loc[price_list['symbol'] == currency_name]
 	#print(f'{price_row}')
 	try:
@@ -188,12 +202,13 @@ def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
 			price = float(price_row["price"].item())
 	except Exception as e:
 		price = None
+	"""
 
-
-	if price_row.empty or price == 0:
+	if price == 0:
 		#price = float(1) #avoid zero division but no error handling
 		price = None
 	#print(f'{price}')
+	
 	return price
 
 def update_time():
@@ -203,14 +218,32 @@ def update_time():
 
 def check_if_websocket_is_running():
 	#check BTC
-	if int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > 0:
-		if int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > \
-		int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running']):
-			#means everything ok
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'] = \
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']
-		else:
+	#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+	if sk.run_algo and int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > 10:
+
+		current_period = int(time.time() * 1000) - int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'lastUpdateTime'])
+		#print(f"period is {current_period} and websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+
+		#websocket api is supposed to be 100ms
+		if current_period > 1000: #1s
+			"""
+			index = int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index'])
+			index_running = int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'])
+
+			if index > index_running:
+				#means everything ok
+				sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'] = index
+
+			if index == index_running:
+				sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'] = index + 1
+			
+			elif index < index_running:
+			"""
 			sk.run_algo = False
+			#text = f"Kucoin: error on websocket running,index are {index} and {index_running} and run algo is: {sk.run_algo}"
+			text = f"Kucoin: error on websocket running, period is {current_period} and run algo is: {sk.run_algo}"
+
+			Trade_algo.send_text(text, exchange = 'kucoin')
 
 async def websocket_get_tickers_and_account_balance(init_time):
 
@@ -218,16 +251,30 @@ async def websocket_get_tickers_and_account_balance(init_time):
 
 		sk.msg = msg
 		#print(f'{sk.msg}')
-		#update price in price list
-		symbol=msg['topic'].split(':')[1]
-		#symbol=msg['subject']
-		#print(f'{symbol}')
-		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
-		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
-		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
-		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
-		sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
 
+		#sk.all_prices_websocket = sk.ns.df
+
+		if msg['topic'] == '/spot/tradeFills':
+			print(f'{sk.msg}')
+			symbol=msg["data"]["symbol"]
+
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity'] = float(msg["data"]["size"])
+			size = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity']
+			text = f"Kucoin: {symbol}: quantity executed is: {size}"
+			Trade_algo.send_text(text, exchange = 'kucoin')
+		elif msg['topic'].split(':')[0] == '/market/ticker':
+			#update price in price list
+			symbol=msg['topic'].split(':')[1]
+			#symbol=msg['subject']
+			#print(f'{symbol}')
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
+			#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+
+		#sk.nf.df = sk.all_prices_websocket
+		print(f'{sk.nf.df}')
 
 	# callback function that receives messages from the socket
 	async def handle_evt(msg):
@@ -237,20 +284,16 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	
 	print("start ksm")
 	loop = asyncio.get_event_loop()
+	ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private = True)
 	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	print(f'{ksm_private}')
 	print(f'{ksm}')
-	#ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private=True)
-
-	# Note: try these one at a time, if all are on you will see a lot of output
-
-	# Account balance - must be authenticated
-	#await ksm_private.subscribe('/account/balance')
 
 	await asyncio.sleep(init_time)
 
+	topic_private = '/spotMarket/tradeOrders'
 	topic = '/market/ticker:'
-	#print(f'{start}')
-	#print(f'{start + LIMIT}')
+
 	for row in tqdm(sk.all_prices_websocket.itertuples()):
 		#print(f'{index}')
 		if row[0] == 0:
@@ -258,9 +301,9 @@ async def websocket_get_tickers_and_account_balance(init_time):
 		elif row[0] > 0:
 			topic = topic + ',' + str(row[1])
 	print(f'{topic}')
-		#sk.all_prices_websocket.at[row[0], 'ksm'] = await KucoinSocketManager.create(loop, sk.client, handle_evt)
-		#await sk.all_prices_websocket.at[row[0], 'ksm'].subscribe(topic)
+
 	
+	await ksm_private.subscribe(topic_private)
 	await ksm.subscribe(topic)
 	
 

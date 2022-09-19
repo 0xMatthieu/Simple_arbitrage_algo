@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import pandas as pd 
 from kucoin.client import Client
 import numpy as np
+import multiprocessing as mp
 
 
 
@@ -12,7 +13,8 @@ def init():
     global Currency_fiat, client, do_real_order, \
     total_money_available, current_money_available, current_total, balance, order_done_current_cycle, \
     api_key, api_secret, test, df_all_pairs, df_all_currencies, df_unique_currencies, dict_all_combinations, \
-    fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity
+    fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity, \
+    df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, ns
 
     #general
     do_real_order = False
@@ -30,6 +32,10 @@ def init():
     all_prices = pd.DataFrame()
     all_prices_websocket = pd.DataFrame()
     dict_all_combinations = 0
+    df_all_pairs_arbitrage = pd.DataFrame()
+    df_all_combinations_arbitrage = pd.DataFrame()
+    dict_all_combinations_arbitrage = 0
+    df_unique_currencies_arbitrage = pd.DataFrame()
     arbitrage_opportunity = pd.DataFrame(columns=['time', 'symbol'])
     fiat_list = ["GBP", "TRY", "KZP", "AUD", "BRL", "PEN", "RUB", "UAH", "UGX", "PHP", "USD" ]
     crypto_list = ["BCC", "MCO", "VEN", "XZC" ]
@@ -46,5 +52,10 @@ def init():
     api_secret = os.environ.get('api_secret_kucoin')
     api_passphrase = os.environ.get('api_passphrase_kucoin')
     client = Client(api_key, api_secret, api_passphrase)
+
+    mgr = mp.Manager()
+    ns = mgr.Namespace()
+
+    ns.df = all_prices_websocket
 
 
