@@ -45,7 +45,7 @@ def init(exchange = 'kucoin', job = 'get_list'):
 	"""
 	if exchange == 'binance':
 		#sb.init()
-		sb.do_real_order = True
+		#sb.do_real_order = True
 		text = f"{exchange} real order is {sb.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Binance_trade.get_all_pairs()
@@ -65,7 +65,7 @@ def init(exchange = 'kucoin', job = 'get_list'):
 	if exchange == 'kucoin':
 		sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
 		#sk.init()
-		sk.do_real_order = False
+		#sk.do_real_order = False
 		text = f"{exchange} real order is {sk.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Kucoin_trade.get_all_pairs()
@@ -143,15 +143,18 @@ def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list',
 			Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
 									BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, price_list, job)
 
+			"""
 			if exchange == 'binance':
 				Binance_trade.fiat_available(Log = sb.order_done_current_cycle)
 			elif exchange == 'kucoin':
 				Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
+			"""
 
 def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 
 	start = time.time()
 
+	Trade_algo.update_process_data('kucoin', 'arbitrage')
 
 	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 	#print(f"{exchange}: {job} client is {sk.client}")

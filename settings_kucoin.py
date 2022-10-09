@@ -14,7 +14,8 @@ def init():
     total_money_available, current_money_available, current_total, balance, order_done_current_cycle, \
     api_key, api_secret, test, df_all_pairs, df_all_currencies, df_unique_currencies, dict_all_combinations, \
     fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity, \
-    df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, ns
+    df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, \
+    pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord
 
     #general
     do_real_order = False
@@ -44,6 +45,9 @@ def init():
     run_algo = True
     msg = 0
 
+    pipe_recv_arbitrage, pipe_send_arbitrage = mp.Pipe(duplex = False)
+    pipe_recv_discord, pipe_send_discord = mp.Pipe(duplex = False)
+
 
 
     # init
@@ -52,10 +56,5 @@ def init():
     api_secret = os.environ.get('api_secret_kucoin')
     api_passphrase = os.environ.get('api_passphrase_kucoin')
     client = Client(api_key, api_secret, api_passphrase)
-
-    mgr = mp.Manager()
-    ns = mgr.Namespace()
-
-    ns.df = all_prices_websocket
 
 

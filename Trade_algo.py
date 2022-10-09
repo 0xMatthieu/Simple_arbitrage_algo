@@ -108,5 +108,10 @@ def calculate_amount(amount_exchange, amount_calculated):
 
 	return amount
 
+def update_process_data(exchange, function):
+	if exchange == 'kucoin':
+		Kucoin_trade.update_data_coming_from_other_process(function)
+
+
 if __name__ == "__main__":
    main()

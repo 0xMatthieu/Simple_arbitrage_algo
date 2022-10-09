@@ -225,7 +225,7 @@ def check_if_websocket_is_running():
 		#print(f"period is {current_period} and websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 
 		#websocket api is supposed to be 100ms
-		if current_period > 1000: #1s
+		if current_period > 5000: #1s
 			"""
 			index = int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index'])
 			index_running = int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', '_index_running'])
@@ -239,7 +239,7 @@ def check_if_websocket_is_running():
 			
 			elif index < index_running:
 			"""
-			sk.run_algo = False
+			#sk.run_algo = False
 			#text = f"Kucoin: error on websocket running,index are {index} and {index_running} and run algo is: {sk.run_algo}"
 			text = f"Kucoin: error on websocket running, period is {current_period} and run algo is: {sk.run_algo}"
 
@@ -251,8 +251,6 @@ async def websocket_get_tickers_and_account_balance(init_time):
 
 		sk.msg = msg
 		#print(f'{sk.msg}')
-
-		#sk.all_prices_websocket = sk.ns.df
 
 		if msg['topic'] == '/spot/tradeFills':
 			print(f'{sk.msg}')
@@ -271,10 +269,9 @@ async def websocket_get_tickers_and_account_balance(init_time):
 			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
 			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
 			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
-			#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+			print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 
-		#sk.nf.df = sk.all_prices_websocket
-		print(f'{sk.nf.df}')
+		update_data_coming_from_other_process("send")
 
 	# callback function that receives messages from the socket
 	async def handle_evt(msg):
@@ -305,7 +302,27 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	
 	await ksm_private.subscribe(topic_private)
 	await ksm.subscribe(topic)
+
+def update_data_coming_from_other_process(function):
 	
+	if function == "send":
+		sk.pipe_send_arbitrage.send(sk.msg)
+		#sk.pipe_send_arbitrage.send(sk.all_prices_websocket)
+		#sk.pipe_send_discord.send(sk.all_prices_websocket)
+	if function == "arbitrage":
+		while sk.pipe_recv_arbitrage.poll():
+			#sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
+			msg = sk.pipe_recv_arbitrage.recv()
+			symbol=msg['topic'].split(':')[1]
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
+			
+	elif function == "discord":
+		while sk.pipe_recv_discord.poll():
+			sk.all_prices_websocket = sk.pipe_recv_discord.recv()
+
 
 if __name__ == "__main__":
    main()
