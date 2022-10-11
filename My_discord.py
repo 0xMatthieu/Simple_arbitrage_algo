@@ -21,7 +21,8 @@ import Kucoin_trade
 import Main_Arbitrage
 import time
 import concurrent.futures  
-import Trade_algo                                                                                   
+import Trade_algo
+import multiprocessing as mp                                                                                
 try:
 	import psutil
 except:
@@ -154,59 +155,14 @@ def discord_arbitrage_run():
 
 	Main_Arbitrage.init('kucoin','get_list')
 
-	
-	#thread = Thread(target=run_discord_bot)
-	#thread.start()
+
+	p1 = mp.Process(target=run_arbitrage, args=(num_procs,)).start()
+	p2 = mp.Process(target=run_discord_bot).start()
+	p3 = mp.Process(target=run_asyncio_functions).start()
+
+	run_asyncio_functions()
 
 
-	
-	#Note: seems that before creating process, global variables can be pass to the process
-
-	results = []
-
-	with concurrent.futures.ProcessPoolExecutor(max_workers=num_procs) as executor:
-
-		results.append(executor.submit(
-			run_arbitrage, num_procs
-		))
-
-		results.append(executor.submit(
-			run_discord_bot
-		))
-
-		results.append(executor.submit(
-			run_asyncio_functions
-		))
-
-		for result in concurrent.futures.as_completed(results):
-			try:
-				print(str(result))
-				pass
-			except Exception as ex:
-				print(str(ex))
-				pass
-
-	"""
-	
-	with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-		
-		
-		print('start thread kucoin arbitrage')
-		executor.submit(
-			run_arbitrage
-		)
-		
-		
-		#print('start thread kucoin list')
-		#executor.submit(
-		#	update_list_arbitrage
-		#)
-
-		#print('start thread websocket')
-		#executor.submit(
-		#	run_asyncio_functions,
-		#)
-	"""
 	
 if __name__ == "__main__":
 	discord_arbitrage_run()

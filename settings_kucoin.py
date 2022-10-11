@@ -15,7 +15,7 @@ def init():
     api_key, api_secret, test, df_all_pairs, df_all_currencies, df_unique_currencies, dict_all_combinations, \
     fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity, \
     df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, \
-    pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord
+    pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord, start, index
 
     #general
     do_real_order = False
@@ -44,6 +44,8 @@ def init():
     Last_info_to_send = ""
     run_algo = True
     msg = 0
+    start = 0
+    index = 0
 
     pipe_recv_arbitrage, pipe_send_arbitrage = mp.Pipe(duplex = False)
     pipe_recv_discord, pipe_send_discord = mp.Pipe(duplex = False)

@@ -156,7 +156,7 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 
 	Trade_algo.update_process_data('kucoin', 'arbitrage')
 
-	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket['price'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == 'BTC-USDT']}")
 	#print(f"{exchange}: {job} client is {sk.client}")
 
 	"""

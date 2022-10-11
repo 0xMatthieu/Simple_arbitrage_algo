@@ -137,8 +137,8 @@ def prepare_price_list_for_websocket():
 	sk.df_all_pairs_arbitrage.insert(1, 'quoteAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[1])
 	sk.df_all_pairs_arbitrage['status'] = 'TRADING'
 
-	sk.all_prices_websocket['price'] = 0
-	sk.all_prices_websocket['symbolName'] = 0
+	sk.all_prices_websocket['price'] = float(0)
+	sk.all_prices_websocket['symbolName'] = ''
 	sk.all_prices_websocket['current_quantity'] = 0
 	sk.all_prices_websocket['lastUpdateTime'] = 0
 	sk.all_prices_websocket['period'] = 0
@@ -189,23 +189,10 @@ def get_quantity_websocket(symbol = "USDT"):
 
 
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
-	price = float(price_list.loc[price_list['symbol'] == currency_name]["price"].item())
-	"""
-	price_row = price_list.loc[price_list['symbol'] == currency_name]
-	#print(f'{price_row}')
-	try:
-		if price_row.empty:
-			price = None
-		elif buy_or_sell == 'buy':
-			price = float(price_row["price"].item())
-		else:
-			price = float(price_row["price"].item())
-	except Exception as e:
-		price = None
-	"""
+	#price = float(price_list.loc[price_list['symbol'] == currency_name]["price"].item())
+	price = float(price_list['price'].to_numpy()[price_list['symbol'].to_numpy() == currency_name].item())
 
 	if price == 0:
-		#price = float(1) #avoid zero division but no error handling
 		price = None
 	#print(f'{price}')
 	
@@ -251,9 +238,9 @@ async def websocket_get_tickers_and_account_balance(init_time):
 
 		sk.msg = msg
 		#print(f'{sk.msg}')
-
+		
 		if msg['topic'] == '/spot/tradeFills':
-			print(f'{sk.msg}')
+			#print(f'{sk.msg}')
 			symbol=msg["data"]["symbol"]
 
 			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity'] = float(msg["data"]["size"])
@@ -265,14 +252,19 @@ async def websocket_get_tickers_and_account_balance(init_time):
 			symbol=msg['topic'].split(':')[1]
 			#symbol=msg['subject']
 			#print(f'{symbol}')
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
-			print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+			sk.all_prices_websocket['price'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = float(msg["data"]["price"])
+			sk.all_prices_websocket['lastUpdateTime'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = int(msg["data"]["time"])
+			sk.all_prices_websocket['index'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] += 1
+			sk.all_prices_websocket['period'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = int(time.time() * 1000) - int(msg["data"]["time"])
+
+		time_elapsed = round(time.time() - sk.start, 3)
+		sk.index += 1
+		#print(f"time between last data received {sk.index} : {time_elapsed}")
+		sk.start = time.time()
+		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 
 		update_data_coming_from_other_process("send")
-
+		
 	# callback function that receives messages from the socket
 	async def handle_evt(msg):
 		task = asyncio.create_task(compute(msg))
@@ -285,8 +277,6 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
 	print(f'{ksm_private}')
 	print(f'{ksm}')
-
-	await asyncio.sleep(init_time)
 
 	topic_private = '/spotMarket/tradeOrders'
 	topic = '/market/ticker:'
@@ -306,19 +296,12 @@ async def websocket_get_tickers_and_account_balance(init_time):
 def update_data_coming_from_other_process(function):
 	
 	if function == "send":
-		sk.pipe_send_arbitrage.send(sk.msg)
-		#sk.pipe_send_arbitrage.send(sk.all_prices_websocket)
+		sk.pipe_send_arbitrage.send(sk.all_prices_websocket)
 		#sk.pipe_send_discord.send(sk.all_prices_websocket)
 	if function == "arbitrage":
 		while sk.pipe_recv_arbitrage.poll():
-			#sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
-			msg = sk.pipe_recv_arbitrage.recv()
-			symbol=msg['topic'].split(':')[1]
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'price'] = msg["data"]["price"]
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'lastUpdateTime'] = msg["data"]["time"]
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'index'] += 1
-			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'period'] = int(time.time() * 1000) - int(msg["data"]["time"])
-			
+			sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
+
 	elif function == "discord":
 		while sk.pipe_recv_discord.poll():
 			sk.all_prices_websocket = sk.pipe_recv_discord.recv()
