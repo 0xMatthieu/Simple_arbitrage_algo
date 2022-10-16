@@ -307,8 +307,11 @@ def update_data_coming_from_other_process(function):
 			sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
 
 	elif function == "discord":
-		while sk.pipe_recv_discord.poll():
-			sk.Last_info_to_send = sk.pipe_recv_discord.recv()
+		try:
+			while sk.pipe_recv_discord.poll():
+				sk.Last_info_to_send = sk.pipe_recv_discord.recv()
+		except:
+			sk.Last_info_to_send = "error in discord received function"
 
 
 if __name__ == "__main__":
