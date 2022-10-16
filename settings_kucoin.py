@@ -5,6 +5,7 @@ import pandas as pd
 from kucoin.client import Client
 import numpy as np
 import multiprocessing as mp
+import ctypes
 
 
 
@@ -15,7 +16,7 @@ def init():
     api_key, api_secret, test, df_all_pairs, df_all_currencies, df_unique_currencies, dict_all_combinations, \
     fiat_list, crypto_list, Index, Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity, \
     df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, \
-    pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord, start, index
+    pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord, start, index, index_arbitrage
 
     #general
     do_real_order = False
@@ -45,10 +46,12 @@ def init():
     run_algo = True
     msg = 0
     start = 0
-    index = 0
+    index = mp.RawValue(ctypes.c_ulonglong)
+    index.value = 0
+    index_arbitrage = 0
 
     pipe_recv_arbitrage, pipe_send_arbitrage = mp.Pipe(duplex = False)
-    pipe_recv_discord, pipe_send_discord = mp.Pipe(duplex = False)
+    pipe_recv_discord, pipe_send_discord = mp.Pipe(duplex = True)
 
 
 

@@ -152,6 +152,13 @@ def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list',
 
 def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 
+	#print(f"{exchange}: {job} index arbitrage is {sk.index_arbitrage} and shared index is {sk.index.value}")
+	if sk.index_arbitrage >= int(sk.index.value):
+		return
+	else:
+		sk.index_arbitrage = int(sk.index.value)
+
+
 	start = time.time()
 
 	Trade_algo.update_process_data('kucoin', 'arbitrage')
@@ -214,8 +221,8 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 		
 	end = time.time()
 	time_elapsed = end - start
-	#print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo}")
-	#Last_info_to_send = str(time_elapsed)
+	#print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
+
 
 
 if __name__ == "__main__":

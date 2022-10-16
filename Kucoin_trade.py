@@ -139,7 +139,7 @@ def prepare_price_list_for_websocket():
 
 	sk.all_prices_websocket['price'] = float(0)
 	sk.all_prices_websocket['symbolName'] = ''
-	sk.all_prices_websocket['current_quantity'] = 0
+	sk.all_prices_websocket['current_quantity'] = None
 	sk.all_prices_websocket['lastUpdateTime'] = 0
 	sk.all_prices_websocket['period'] = 0
 	sk.all_prices_websocket['index'] = 0
@@ -184,7 +184,7 @@ def get_money(Currency = "USDT"):
 	return amount
 
 def get_quantity_websocket(symbol = "USDT"):
-	amount = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity']
+	amount = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity'].item()
 	return amount
 
 
@@ -258,8 +258,9 @@ async def websocket_get_tickers_and_account_balance(init_time):
 			sk.all_prices_websocket['period'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = int(time.time() * 1000) - int(msg["data"]["time"])
 
 		time_elapsed = round(time.time() - sk.start, 3)
-		sk.index += 1
-		#print(f"time between last data received {sk.index} : {time_elapsed}")
+		sk.index.value += 1
+		#print(f"time between last data received {sk.index.value} : {time_elapsed}")
+		#print(f"time between last data received : {time_elapsed}")
 		sk.start = time.time()
 		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
 
@@ -275,8 +276,8 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	loop = asyncio.get_event_loop()
 	ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private = True)
 	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
-	print(f'{ksm_private}')
-	print(f'{ksm}')
+	print(f'ksm private is {ksm_private}')
+	print(f'ksm is {ksm}')
 
 	topic_private = '/spotMarket/tradeOrders'
 	topic = '/market/ticker:'
@@ -299,12 +300,15 @@ def update_data_coming_from_other_process(function):
 		sk.pipe_send_arbitrage.send(sk.all_prices_websocket)
 		#sk.pipe_send_discord.send(sk.all_prices_websocket)
 	if function == "arbitrage":
+		sk.pipe_send_discord.send(sk.Last_info_to_send)
+		while sk.pipe_recv_discord.poll():
+			sk.Last_info_to_send = sk.pipe_recv_discord.recv()
 		while sk.pipe_recv_arbitrage.poll():
 			sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
 
 	elif function == "discord":
 		while sk.pipe_recv_discord.poll():
-			sk.all_prices_websocket = sk.pipe_recv_discord.recv()
+			sk.Last_info_to_send = sk.pipe_recv_discord.recv()
 
 
 if __name__ == "__main__":

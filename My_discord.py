@@ -46,6 +46,7 @@ def run_discord_bot():
 
 	@tasks.loop(seconds=1)
 	async def update_discord():
+		Trade_algo.update_process_data('kucoin', 'discord')
 		channel = client.get_channel(channel_id)
 		if sb.Last_info_to_send != "":
 			await channel.send(sb.Last_info_to_send)
@@ -158,11 +159,9 @@ def discord_arbitrage_run():
 
 	p1 = mp.Process(target=run_arbitrage, args=(num_procs,)).start()
 	p2 = mp.Process(target=run_discord_bot).start()
-	p3 = mp.Process(target=run_asyncio_functions).start()
+	#p3 = mp.Process(target=run_asyncio_functions).start()
 
 	run_asyncio_functions()
-
-
 	
 if __name__ == "__main__":
 	discord_arbitrage_run()
