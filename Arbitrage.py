@@ -18,8 +18,6 @@ import Trade_algo
 from datetime import datetime
 import time
 
-
-
 def get_crypto_combinations(pairs, base, df_all_combinations):
 	#pairs shall be a dataframe
 	#sb.df_all_combinations = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
@@ -204,13 +202,6 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 			text = f"{job}: time to perform calculation is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)
 			place_trade_orders(arbitrage_type, scrip1, scrip2, scrip3, initial_investment, scrip_prices, exchange) 
-			#TODO: erase or change
-			########
-			########
-			#test
-			sk.run_algo = False
-			########
-			########
 			time_elapsed = time.time() - start
 			text = f"{job}: time to perform all arbitrage is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)

@@ -35,17 +35,9 @@ def init(exchange = 'kucoin', job = 'get_list'):
 	logging.basicConfig(filename='my_log_file.log', format='%(asctime)s - %(message)s', level=logging.INFO)
 
 	"""
-	All exchanges
-	"""
-	#sb.init()
-	#sk.init()
-
-	"""
 	Binance exchange
 	"""
 	if exchange == 'binance':
-		#sb.init()
-		#sb.do_real_order = True
 		text = f"{exchange} real order is {sb.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Binance_trade.get_all_pairs()
@@ -53,8 +45,6 @@ def init(exchange = 'kucoin', job = 'get_list'):
 		sb.df_all_combinations, sb.df_unique_currencies, sb.dict_all_combinations = Arbitrage.get_crypto_combinations(sb.df_all_pairs, "USDT", sb.df_all_combinations)
 		sb.df_all_combinations, sb.df_unique_currencies, sb.dict_all_combinations = Arbitrage.get_crypto_combinations(sb.df_all_pairs, "BUSD", sb.df_all_combinations)
 		sb.order_done_current_cycle = True
-		#Binance_trade.money_available(Log = sb.order_done_current_cycle, Currency1 = Currency1, Currency2 = Currency2, Currency3 = Currency3, Currency4 = Currency4, Currency5= Currency5)
-		#Binance_trade.futures_fiat_available(Log = sb.order_done_current_cycle)
 		Binance_trade.fiat_available(Log = True)
 		text = f"Start software binance -{datetime.now().strftime('%H:%M:%S')}"
 		Trade_algo.send_text(text, exchange = exchange)
@@ -64,8 +54,6 @@ def init(exchange = 'kucoin', job = 'get_list'):
 	"""
 	if exchange == 'kucoin':
 		sk.arbitrage_opportunity = pd.read_json('Arbitrage_oppotunities.json')
-		#sk.init()
-		#sk.do_real_order = False
 		text = f"{exchange} real order is {sk.do_real_order} and job is {job}"
 		Trade_algo.send_text(text, exchange = exchange)
 		Kucoin_trade.get_all_pairs()
@@ -76,7 +64,6 @@ def init(exchange = 'kucoin', job = 'get_list'):
 		sk.df_all_combinations_arbitrage = pd.DataFrame(columns=['base', 'intermediate', 'ticker', 'first_pair', 'second_pair', 'third_pair'])
 		sk.df_all_combinations_arbitrage, sk.df_unique_currencies_arbitrage, sk.dict_all_combinations_arbitrage = Arbitrage.get_crypto_combinations(sk.df_all_pairs_arbitrage, "USDT", sk.df_all_combinations_arbitrage)
 		
-		#Kucoin_trade.start_websocket()
 		text = f"Start software kucoin -{datetime.now().strftime('%H:%M:%S')}"
 		Trade_algo.send_text(text, exchange = exchange)
 
@@ -116,13 +103,7 @@ def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list',
 	MIN_PROFIT_DOLLARS = 2
 	BROKERAGE_PER_TRANSACTION_PERCENT = 0.1
 
-
-
 	if dict_crypto is not None:
-		#for row in zip(*dict_crypto.values()):
-		#for row in dict_crypto:
-		#print(f"start perform_arbitrage process and {len(dict_crypto)} ")
-
 		for row in zip(dict_crypto):
 
 			base = row[0]['base']
@@ -143,12 +124,6 @@ def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list',
 			Arbitrage.perform_triangular_arbitrage(s3,s2,s1,'BUY_SELL_SELL',INVESTMENT_AMOUNT_DOLLARS,
 									BROKERAGE_PER_TRANSACTION_PERCENT, MIN_PROFIT_DOLLARS, exchange, price_list, job)
 
-			"""
-			if exchange == 'binance':
-				Binance_trade.fiat_available(Log = sb.order_done_current_cycle)
-			elif exchange == 'kucoin':
-				Kucoin_trade.fiat_available(Log = sb.order_done_current_cycle)
-			"""
 
 def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 
@@ -164,7 +139,6 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 	Trade_algo.update_process_data('kucoin', 'arbitrage')
 
 	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket['price'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == 'BTC-USDT']}")
-	#print(f"{exchange}: {job} client is {sk.client}")
 
 	"""
 	Binance exchange
@@ -187,7 +161,6 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 	if exchange == 'kucoin':
 		run_algo = sk.run_algo
 		sk.order_done_current_cycle = False
-		
 
 		if job == 'get_list':
 			exchange_dict = sk.dict_all_combinations
@@ -197,31 +170,14 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 			Kucoin_trade.check_if_websocket_is_running()
 			exchange_dict = sk.dict_all_combinations_arbitrage
 			price_list = sk.all_prices_websocket
-			#print(f"verification passed")
 
-	# main software: use concurrent futures
 	if run_algo:
 
 		perform_arbitrage(dict_crypto=exchange_dict, exchange=exchange, job=job, price_list=price_list)
-		"""
-		splitted_df = np.array_split(exchange_dict, num_procs)
-
-		df_results = []
-
-		with concurrent.futures.ProcessPoolExecutor(max_workers=num_procs) as executor:
-			results = [executor.submit(perform_arbitrage,dict_crypto=df, exchange=exchange, job=job, price_list=price_list) for df in splitted_df]
-
-			for result in concurrent.futures.as_completed(results):
-				try:
-					df_results.append(result.result())
-				except Exception as ex:
-					print(str(ex))
-					pass
-		"""
 		
 	end = time.time()
 	time_elapsed = end - start
-	#print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
+	print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
 
 
 

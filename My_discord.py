@@ -135,8 +135,6 @@ def update_list_arbitrage():
 		Main_Arbitrage.run('kucoin','get_list')
 
 def run_arbitrage(num_procs = 2):
-	
-
 	while True:
 		#print('run async arbitrage')
 		Main_Arbitrage.run('kucoin','do_arbitrage', num_procs)
