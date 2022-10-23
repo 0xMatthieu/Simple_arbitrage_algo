@@ -127,16 +127,10 @@ def perform_arbitrage(dict_crypto = None, exchange = 'kucoin', job = 'get_list',
 
 def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 
-	#print(f"{exchange}: {job} index arbitrage is {sk.index_arbitrage} and shared index is {sk.index.value}")
-	if sk.index_arbitrage >= int(sk.index.value):
-		return
-	else:
-		sk.index_arbitrage = int(sk.index.value)
+	
 
 
 	start = time.time()
-
-	Trade_algo.update_process_data('kucoin', 'arbitrage')
 
 	#print(f"{exchange}: {job} dict is {sk.all_prices_websocket['price'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == 'BTC-USDT']}")
 
@@ -167,6 +161,12 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 			Kucoin_trade.get_all_prices()
 			price_list = sk.all_prices
 		elif job == 'do_arbitrage':
+			#print(f"{exchange}: {job} index arbitrage is {sk.index_arbitrage} and shared index is {sk.index.value}")
+			if sk.index_arbitrage >= int(sk.index.value):
+				return
+			else:
+				sk.index_arbitrage = int(sk.index.value)
+			Trade_algo.update_process_data('kucoin', 'arbitrage')
 			Kucoin_trade.check_if_websocket_is_running()
 			exchange_dict = sk.dict_all_combinations_arbitrage
 			price_list = sk.all_prices_websocket
@@ -177,7 +177,7 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 		
 	end = time.time()
 	time_elapsed = end - start
-	print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
+	#print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
 
 
 

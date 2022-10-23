@@ -25,8 +25,6 @@ from tqdm import tqdm
 from urllib3.exceptions import InsecureRequestWarning
 
 
-
-
 def do_market_order(currency_name =0, order_type = "None", quantity = 0, current_price = 0, to_round = True):
 	sk.order_done_current_cycle = True
 	row = sk.df_all_pairs.loc[sk.df_all_pairs['symbol'] == currency_name]
@@ -127,20 +125,30 @@ def get_all_prices():
 		Trade_algo.send_text(text, exchange = 'kucoin')
 
 def prepare_price_list_for_websocket():
+	"""
+	get_all_prices()
+	sk.all_prices_websocket = sk.all_prices.copy()
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['averagePrice', 'buy', 'changePrice', 'changeRate', 'high'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['takerCoefficient', 'takerFeeRate', 'vol', 'volValue'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['low', 'makerCoefficient', 'makerFeeRate', 'sell'])
+	c = sk.all_prices_websocket.columns
+	sk.all_prices_websocket = sk.all_prices_websocket[c[np.r_[1, 0, 2:len(c)]]]
+
+	"""
 	sk.all_prices_websocket = pd.read_json('Arbitrage_oppotunities.json')
 	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['time'])
 	sk.df_all_pairs_arbitrage = sk.all_prices_websocket.copy()
 	sk.df_all_pairs_arbitrage.insert(0, 'baseAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[0])
 	sk.df_all_pairs_arbitrage.insert(1, 'quoteAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[1])
 	sk.df_all_pairs_arbitrage['status'] = 'TRADING'
-
+	
 	sk.all_prices_websocket['price'] = float(0)
 	sk.all_prices_websocket['symbolName'] = ''
 	sk.all_prices_websocket['current_quantity'] = None
 	sk.all_prices_websocket['lastUpdateTime'] = 0
 	sk.all_prices_websocket['period'] = 0
 	sk.all_prices_websocket['index'] = 0
-	sk.all_prices_websocket['_index_running'] = 0
+	sk.all_prices_websocket['trading_authorize'] = True
 
 def fiat_available(Currency = "USDT", Log = False):
 	# shall be call first, reset current total
@@ -238,7 +246,6 @@ async def websocket_get_tickers_and_account_balance(init_time):
 		task = asyncio.create_task(compute(msg))
 		await task
 
-	
 	print("start ksm")
 	loop = asyncio.get_event_loop()
 	ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private = True)
@@ -256,7 +263,6 @@ async def websocket_get_tickers_and_account_balance(init_time):
 			topic = topic + ',' + str(row[1])
 	print(f'{topic}')
 
-	
 	await ksm_private.subscribe(topic_private)
 	await ksm.subscribe(topic)
 

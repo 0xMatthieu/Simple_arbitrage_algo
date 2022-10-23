@@ -77,7 +77,8 @@ def run_discord_bot():
 	@client.event
 	async def on_ready():
 		print('We have logged in as {0.user}'.format(client))
-		update_discord.start()
+		if not update_discord.is_running():
+			update_discord.start()
 		message_to_send = update_money()
 		channel = client.get_channel(channel_id)
 		await channel.send(message_to_send)
@@ -158,6 +159,7 @@ def discord_arbitrage_run():
 	p1 = mp.Process(target=run_arbitrage, args=(num_procs,)).start()
 	p2 = mp.Process(target=run_discord_bot).start()
 	#p3 = mp.Process(target=run_asyncio_functions).start()
+	#p4 = mp.Process(target=update_list_arbitrage).start()
 
 	run_asyncio_functions()
 	
