@@ -15,8 +15,11 @@ def init():
     df_all_pairs_arbitrage, df_all_combinations_arbitrage, dict_all_combinations_arbitrage, df_unique_currencies_arbitrage, \
     pipe_recv_arbitrage, pipe_send_arbitrage, pipe_recv_discord, pipe_send_discord, start, index, index_arbitrage
 
+    #parameters
+    do_real_order = True
+
+
     #general
-    do_real_order = False
     total_money_available = 0
     current_money_available = 0
     current_total = 0

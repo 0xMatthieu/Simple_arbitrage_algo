@@ -206,5 +206,13 @@ def perform_triangular_arbitrage(scrip1, scrip2, scrip3, arbitrage_type,initial_
 			text = f"{job}: time to perform all arbitrage is {time_elapsed}"
 			Trade_algo.send_text(text, exchange = exchange)
 
+			"""
+			TODO remove in production
+			"""
+			if exchange == 'kucoin':
+				sk.run_algo = False
+				text = f"{job}: test in arbitrage function to stop run_algo after one arbitrage run, algo is {sk.run_algo}"
+				Trade_algo.send_text(text, exchange = exchange)
+
 if __name__ == "__main__":
    main()

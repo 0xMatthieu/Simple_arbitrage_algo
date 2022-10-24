@@ -44,11 +44,11 @@ def do_market_order(currency_name =0, order_type = "None", quantity = 0, current
 	if sk.do_real_order:
 		try:
 			if order_type == "Buy":
-				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client.SIDE_BUY, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client_2.SIDE_BUY, size=quantity)
 				text = f"Kucoin: {currency_name}: real buy order done for quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			elif order_type == "Sell":
-				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client.SIDE_SELL, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client_2.SIDE_SELL, size=quantity)
 				text = f"Kucoin: {currency_name}: real sell order donefor quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			else:
