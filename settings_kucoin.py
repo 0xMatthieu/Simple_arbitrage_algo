@@ -8,7 +8,7 @@ import multiprocessing as mp
 import ctypes
 
 def init():
-    global client, do_real_order, \
+    global client, client_2, do_real_order, \
     total_money_available, current_money_available, current_total, balance, order_done_current_cycle, \
     api_key, api_secret, df_all_pairs, df_all_currencies, df_unique_currencies, dict_all_combinations, \
     Last_info_to_send, run_algo, msg, all_prices, all_prices_websocket, arbitrage_opportunity, \
@@ -50,6 +50,10 @@ def init():
     api_key = os.environ.get('api_key_kucoin')
     api_secret = os.environ.get('api_secret_kucoin')
     api_passphrase = os.environ.get('api_passphrase_kucoin')
+    api_key_2 = os.environ.get('api_key_kucoin_2')
+    api_secret_2 = os.environ.get('api_secret_kucoin_2')
+    api_passphrase_2 = os.environ.get('api_passphrase_kucoin_2')
     client = Client(api_key, api_secret, api_passphrase)
+    client_2 = Client(api_key_2, api_secret_2, api_passphrase_2)
 
 

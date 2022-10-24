@@ -177,7 +177,7 @@ def run(exchange = 'kucoin', job = 'get_list', num_procs = 2):
 		
 	end = time.time()
 	time_elapsed = end - start
-	#print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
+	print(f"{exchange}: {job} time elapsed is {time_elapsed} and run algo is {run_algo} and index is {sk.index_arbitrage}")
 
 
 

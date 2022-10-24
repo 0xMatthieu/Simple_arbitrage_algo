@@ -159,7 +159,7 @@ def discord_arbitrage_run():
 	p1 = mp.Process(target=run_arbitrage, args=(num_procs,)).start()
 	p2 = mp.Process(target=run_discord_bot).start()
 	#p3 = mp.Process(target=run_asyncio_functions).start()
-	#p4 = mp.Process(target=update_list_arbitrage).start()
+	p4 = mp.Process(target=update_list_arbitrage).start()
 
 	run_asyncio_functions()
 	

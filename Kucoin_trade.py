@@ -44,11 +44,11 @@ def do_market_order(currency_name =0, order_type = "None", quantity = 0, current
 	if sk.do_real_order:
 		try:
 			if order_type == "Buy":
-				order = sk.client.create_market_order(symbol=currency_name, side=sk.client.SIDE_BUY, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client.SIDE_BUY, size=quantity)
 				text = f"Kucoin: {currency_name}: real buy order done for quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			elif order_type == "Sell":
-				order = sk.client.create_market_order(symbol=currency_name, side=sk.client.SIDE_SELL, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client.SIDE_SELL, size=quantity)
 				text = f"Kucoin: {currency_name}: real sell order donefor quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			else:
@@ -81,7 +81,7 @@ def do_market_order(currency_name =0, order_type = "None", quantity = 0, current
 		"""
 
 def get_currency_min_notional(Currency):
-	info = sk.client.get_symbol_info(Currency.Currency)
+	info = sk.client_2.get_symbol_info(Currency.Currency)
 	Currency.min_notional = float(info['filters'][3]['minNotional'])
 	StepSize = float(info['filters'][2]['stepSize'])
 	Currency.precision = int(round(-math.log(StepSize, 10), 0))
@@ -91,7 +91,7 @@ def get_currency_min_notional(Currency):
 	Currency.qty_reduce_only = round(float(info['filters'][5]['maxQty'])/100, 0)
 
 def get_all_pairs():
-	info = sk.client.get_symbols()
+	info = sk.client_2.get_symbols()
 	sk.df_all_pairs = pd.DataFrame(info)
 	sk.df_all_pairs = sk.df_all_pairs[['baseCurrency','quoteCurrency','symbol','enableTrading','quoteMinSize', 'baseMinSize']]
 	sk.df_all_pairs.columns = ['baseAsset','quoteAsset','symbol','status','minNotional', 'stepSize']
@@ -113,7 +113,7 @@ def fetch_precision(currency_name, price_list):
 def get_all_prices():
 	#time.sleep(0.01)
 	try:
-		kucoin_prices = pd.DataFrame(sk.client.get_ticker()['ticker'])
+		kucoin_prices = pd.DataFrame(sk.client_2.get_ticker()['ticker'])
 		kucoin_prices = kucoin_prices.rename(columns={"last": "price"})
 		sk.all_prices = kucoin_prices
 		#print(f'{sk.all_prices}')
@@ -154,7 +154,7 @@ def fiat_available(Currency = "USDT", Log = False):
 	# shall be call first, reset current total
 	sk.current_total = 0
 	if sk.api_key != None and sk.test == False and Log == True:
-		value = pd.DataFrame(sk.client.get_accounts())
+		value = pd.DataFrame(sk.client_2.get_accounts())
 		sk.current_money_available = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
 	sk.current_total = sk.current_money_available
 	sk.balance = round(sk.current_total - sk.total_money_available, 2)
@@ -163,7 +163,7 @@ def get_money(Currency = "USDT"):
 	amount = None
 	if sk.api_key != None:
 		try:
-			value = pd.DataFrame(sk.client.get_accounts())
+			value = pd.DataFrame(sk.client_2.get_accounts())
 			amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
 		except Exception as e:
 			if sk.do_real_order == True:
