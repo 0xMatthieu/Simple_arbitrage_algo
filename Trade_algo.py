@@ -35,7 +35,7 @@ def fetch_price_exchange(exchange, currency_name, price_list, buy_or_sell):
 	if exchange == 'binance':
 		price = Binance_trade.fetch_current_ticker_price(currency_name, price_list)
 	elif exchange == 'kucoin':
-		price =Kucoin_trade.fetch_current_ticker_price(currency_name, price_list, buy_or_sell)
+		price = Kucoin_trade.fetch_current_ticker_price(currency_name, price_list, buy_or_sell)
 	else:
 		print(f"fetch_price_exchange: wrong exchange name")
 		price = 'None'
@@ -43,7 +43,7 @@ def fetch_price_exchange(exchange, currency_name, price_list, buy_or_sell):
 	return price
 
 def send_text(text, exchange):
-	print(text)
+	print(text, flush = True)
 	logging.critical(text)
 	if exchange == 'binance':
 		if sb.Last_info_to_send == "":
@@ -70,6 +70,17 @@ def fetch_amount_exchange(currency, exchange):
 
 	return amount
 
+def fetch_amount_exchange_order_websocket(scrip, exchange, order):
+	if exchange == 'binance':
+		amount = None
+	elif exchange == 'kucoin':
+		amount = Kucoin_trade.get_quantity_websocket(symbol = scrip)
+	else:
+		print(f"fetch_amount_exchange: wrong exchange name")
+		amount = 'None'
+
+	return amount
+
 def fetch_amount_exchange_order(scrip, exchange, order):
 	if exchange == 'binance':
 		scrip_splitted = scrip.split("/")
@@ -88,6 +99,18 @@ def fetch_amount_exchange_order(scrip, exchange, order):
 		amount = 'None'
 
 	return amount
+
+def calculate_amount(amount_exchange, amount_calculated):
+	if amount_exchange == None:
+		amount = amount_calculated
+	else:
+		amount = amount_exchange
+
+	return amount
+
+def update_process_data(exchange, function):
+	if exchange == 'kucoin':
+		Kucoin_trade.update_data_coming_from_other_process(function)
 
 
 if __name__ == "__main__":

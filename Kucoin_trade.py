@@ -11,6 +11,8 @@ import time
 
 from kucoin.client import Client
 from kucoin.exceptions import KucoinAPIException, KucoinRequestException, MarketOrderException
+from kucoin.asyncio import KucoinSocketManager
+import asyncio
 import pandas as pd
 import logging
 import settings_kucoin as sk
@@ -19,6 +21,8 @@ import numpy as np
 import requests
 from datetime import datetime
 import Trade_algo
+from tqdm import tqdm
+from urllib3.exceptions import InsecureRequestWarning
 
 
 def do_market_order(currency_name =0, order_type = "None", quantity = 0, current_price = 0, to_round = True):
@@ -40,13 +44,11 @@ def do_market_order(currency_name =0, order_type = "None", quantity = 0, current
 	if sk.do_real_order:
 		try:
 			if order_type == "Buy":
-				#time.sleep(0.01)
-				order = sk.client.create_market_order(symbol=currency_name, side=sk.client.SIDE_BUY, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client_2.SIDE_BUY, size=quantity)
 				text = f"Kucoin: {currency_name}: real buy order done for quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			elif order_type == "Sell":
-				#time.sleep(0.01)
-				order = sk.client.create_market_order(symbol=currency_name, side=sk.client.SIDE_SELL, size=quantity)
+				order = sk.client_2.create_market_order(symbol=currency_name, side=sk.client_2.SIDE_SELL, size=quantity)
 				text = f"Kucoin: {currency_name}: real sell order donefor quantity: {quantity}, struct is {order}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 			else:
@@ -79,7 +81,7 @@ def do_market_order(currency_name =0, order_type = "None", quantity = 0, current
 		"""
 
 def get_currency_min_notional(Currency):
-	info = sk.client.get_symbol_info(Currency.Currency)
+	info = sk.client_2.get_symbol_info(Currency.Currency)
 	Currency.min_notional = float(info['filters'][3]['minNotional'])
 	StepSize = float(info['filters'][2]['stepSize'])
 	Currency.precision = int(round(-math.log(StepSize, 10), 0))
@@ -89,7 +91,7 @@ def get_currency_min_notional(Currency):
 	Currency.qty_reduce_only = round(float(info['filters'][5]['maxQty'])/100, 0)
 
 def get_all_pairs():
-	info = sk.client.get_symbols()
+	info = sk.client_2.get_symbols()
 	sk.df_all_pairs = pd.DataFrame(info)
 	sk.df_all_pairs = sk.df_all_pairs[['baseCurrency','quoteCurrency','symbol','enableTrading','quoteMinSize', 'baseMinSize']]
 	sk.df_all_pairs.columns = ['baseAsset','quoteAsset','symbol','status','minNotional', 'stepSize']
@@ -111,8 +113,10 @@ def fetch_precision(currency_name, price_list):
 def get_all_prices():
 	#time.sleep(0.01)
 	try:
-		kucoin_prices = pd.DataFrame(sk.client.get_ticker()['ticker'])
+		kucoin_prices = pd.DataFrame(sk.client_2.get_ticker()['ticker'])
+		kucoin_prices = kucoin_prices.rename(columns={"last": "price"})
 		sk.all_prices = kucoin_prices
+		#print(f'{sk.all_prices}')
 	except requests.exceptions.Timeout:
 		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin read price timeout has occured"
 		Trade_algo.send_text(text, exchange = 'kucoin')
@@ -120,31 +124,165 @@ def get_all_prices():
 		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
 		Trade_algo.send_text(text, exchange = 'kucoin')
 
+def prepare_price_list_for_websocket():
+	"""
+	get_all_prices()
+	sk.all_prices_websocket = sk.all_prices.copy()
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['averagePrice', 'buy', 'changePrice', 'changeRate', 'high'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['takerCoefficient', 'takerFeeRate', 'vol', 'volValue'])
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['low', 'makerCoefficient', 'makerFeeRate', 'sell'])
+	c = sk.all_prices_websocket.columns
+	sk.all_prices_websocket = sk.all_prices_websocket[c[np.r_[1, 0, 2:len(c)]]]
+
+	"""
+	sk.all_prices_websocket = pd.read_json('Arbitrage_oppotunities.json')
+	sk.all_prices_websocket = sk.all_prices_websocket.drop(columns=['time'])
+	sk.df_all_pairs_arbitrage = sk.all_prices_websocket.copy()
+	sk.df_all_pairs_arbitrage.insert(0, 'baseAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[0])
+	sk.df_all_pairs_arbitrage.insert(1, 'quoteAsset', sk.all_prices_websocket['symbol'].str.split('-',expand = True)[1])
+	sk.df_all_pairs_arbitrage['status'] = 'TRADING'
+	
+	sk.all_prices_websocket['price'] = float(0)
+	sk.all_prices_websocket['symbolName'] = ''
+	sk.all_prices_websocket['current_quantity'] = None
+	sk.all_prices_websocket['lastUpdateTime'] = 0
+	sk.all_prices_websocket['period'] = 0
+	sk.all_prices_websocket['index'] = 0
+	sk.all_prices_websocket['trading_authorize'] = True
+
 def fiat_available(Currency = "USDT", Log = False):
 	# shall be call first, reset current total
 	sk.current_total = 0
 	if sk.api_key != None and sk.test == False and Log == True:
-		#time.sleep(0.01)
-		value = pd.DataFrame(sk.client.get_accounts())
+		value = pd.DataFrame(sk.client_2.get_accounts())
 		sk.current_money_available = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
 	sk.current_total = sk.current_money_available
 	sk.balance = round(sk.current_total - sk.total_money_available, 2)
 
 def get_money(Currency = "USDT"):
-	amount = 'Not available'
+	amount = None
 	if sk.api_key != None:
-		#time.sleep(0.01)
-		value = pd.DataFrame(sk.client.get_accounts())
-		amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
+		try:
+			value = pd.DataFrame(sk.client_2.get_accounts())
+			amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
+		except Exception as e:
+			if sk.do_real_order == True:
+				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
+				Trade_algo.send_text(text, exchange = 'kucoin')
+
+				#else do nothing this error can happen when do order is False cause trade has not been set and amount is Null
+
 	return amount
 
+def get_quantity_websocket(symbol = "USDT"):
+	amount = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity'].item()
+	return amount
+
+
 def fetch_current_ticker_price(currency_name, price_list, buy_or_sell):
-	price_row = price_list.loc[price_list['symbol'] == currency_name]
-	if buy_or_sell == 'buy':
-		price = float(price_row["last"].item())
-	else:
-		price = float(price_row["last"].item())
+	#price = float(price_list.loc[price_list['symbol'] == currency_name]["price"].item())
+	price = float(price_list['price'].to_numpy()[price_list['symbol'].to_numpy() == currency_name].item())
+
+	if price == 0:
+		price = None
+	#print(f'{price}')
+	
 	return price
+
+def update_time():
+	current_time = int(time.time() * 1000)
+	for row in tqdm(sk.all_prices_websocket.itertuples()):
+		sk.all_prices_websocket.at[row[0], 'period'] = current_time - int(sk.all_prices_websocket.at[row[0], 'lastUpdateTime'])
+
+def check_if_websocket_is_running():
+	#check BTC
+	if sk.run_algo and int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'index']) > 10:
+
+		current_period = int(time.time() * 1000) - int(sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT', 'lastUpdateTime'])
+
+		#websocket api is supposed to be 100ms
+		if current_period > 5000: #1s
+			#sk.run_algo = False
+			#text = f"Kucoin: error on websocket running,index are {index} and {index_running} and run algo is: {sk.run_algo}"
+			text = f"Kucoin: error on websocket running, period is {current_period} and run algo is: {sk.run_algo}"
+
+			Trade_algo.send_text(text, exchange = 'kucoin')
+
+async def websocket_get_tickers_and_account_balance(init_time):
+
+	async def compute(msg):
+
+		sk.msg = msg
+		#print(f'{sk.msg}')
+		
+		if msg['topic'] == '/spot/tradeFills':
+			#print(f'{sk.msg}')
+			symbol=msg["data"]["symbol"]
+
+			sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity'] = float(msg["data"]["size"])
+			size = sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == symbol, 'current_quantity']
+			text = f"Kucoin: {symbol}: quantity executed is: {size}"
+			Trade_algo.send_text(text, exchange = 'kucoin')
+		elif msg['topic'].split(':')[0] == '/market/ticker':
+			#update price in price list
+			symbol=msg['topic'].split(':')[1]
+			#symbol=msg['subject']
+			#print(f'{symbol}')
+			sk.all_prices_websocket['price'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = float(msg["data"]["price"])
+			sk.all_prices_websocket['lastUpdateTime'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = int(msg["data"]["time"])
+			sk.all_prices_websocket['index'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] += 1
+			sk.all_prices_websocket['period'].to_numpy()[sk.all_prices_websocket['symbol'].to_numpy() == symbol] = int(time.time() * 1000) - int(msg["data"]["time"])
+
+		time_elapsed = round(time.time() - sk.start, 3)
+		sk.index.value += 1
+		#print(f"time between last data received {sk.index.value} : {time_elapsed}")
+		sk.start = time.time()
+		#print(f"websocket btc is {sk.all_prices_websocket.loc[sk.all_prices_websocket['symbol'] == 'BTC-USDT']}")
+
+		update_data_coming_from_other_process("send")
+		
+	# callback function that receives messages from the socket
+	async def handle_evt(msg):
+		task = asyncio.create_task(compute(msg))
+		await task
+
+	print("start ksm")
+	loop = asyncio.get_event_loop()
+	ksm_private = await KucoinSocketManager.create(loop, sk.client, handle_evt, private = True)
+	ksm = await KucoinSocketManager.create(loop, sk.client, handle_evt)
+	print(f'ksm private is {ksm_private}')
+	print(f'ksm is {ksm}')
+
+	topic_private = '/spotMarket/tradeOrders'
+	topic = '/market/ticker:'
+
+	for row in tqdm(sk.all_prices_websocket.itertuples()):
+		if row[0] == 0:
+			topic = topic + str(row[1])
+		elif row[0] > 0:
+			topic = topic + ',' + str(row[1])
+	print(f'{topic}')
+
+	await ksm_private.subscribe(topic_private)
+	await ksm.subscribe(topic)
+
+def update_data_coming_from_other_process(function):
+	
+	if function == "send":
+		sk.pipe_send_arbitrage.send(sk.all_prices_websocket)
+	if function == "arbitrage":
+		sk.pipe_send_discord.send(sk.Last_info_to_send)
+		while sk.pipe_recv_discord.poll():
+			sk.Last_info_to_send = sk.pipe_recv_discord.recv()
+		while sk.pipe_recv_arbitrage.poll():
+			sk.all_prices_websocket = sk.pipe_recv_arbitrage.recv()
+
+	elif function == "discord":
+		try:
+			while sk.pipe_recv_discord.poll():
+				sk.Last_info_to_send = sk.pipe_recv_discord.recv()
+		except:
+			sk.Last_info_to_send = "error in discord received function"
 
 
 if __name__ == "__main__":
