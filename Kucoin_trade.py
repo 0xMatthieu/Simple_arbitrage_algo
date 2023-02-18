@@ -121,7 +121,7 @@ def get_all_prices():
 		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin read price timeout has occured"
 		Trade_algo.send_text(text, exchange = 'kucoin')
 	except Exception as e:
-		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
+		text = f"{datetime.now().strftime('%H:%M:%S')} kucoin read price error has occured: {e}"
 		Trade_algo.send_text(text, exchange = 'kucoin')
 
 def prepare_price_list_for_websocket():
@@ -167,7 +167,7 @@ def get_money(Currency = "USDT"):
 			amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
 		except Exception as e:
 			if sk.do_real_order == True:
-				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
+				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin get money error has occured: {e}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 
 				#else do nothing this error can happen when do order is False cause trade has not been set and amount is Null
@@ -213,7 +213,7 @@ async def websocket_get_tickers_and_account_balance(init_time):
 	async def compute(msg):
 
 		sk.msg = msg
-		#print(f'{sk.msg}')
+		print(f'{sk.msg}')
 		
 		if msg['topic'] == '/spot/tradeFills':
 			#print(f'{sk.msg}')
@@ -261,7 +261,7 @@ async def websocket_get_tickers_and_account_balance(init_time):
 			topic = topic + str(row[1])
 		elif row[0] > 0:
 			topic = topic + ',' + str(row[1])
-	print(f'{topic}')
+	#print(f'{topic}')
 
 	await ksm_private.subscribe(topic_private)
 	await ksm.subscribe(topic)
