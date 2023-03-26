@@ -167,7 +167,7 @@ def get_money(Currency = "USDT"):
 			amount = float(value.loc[(value['currency'] == Currency) & (value['type'] == "trade")]["available"].item())
 		except Exception as e:
 			if sk.do_real_order == True:
-				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured: {e}"
+				text = f"{datetime.now().strftime('%H:%M:%S')} kucoin error has occured in get money: {e}"
 				Trade_algo.send_text(text, exchange = 'kucoin')
 
 				#else do nothing this error can happen when do order is False cause trade has not been set and amount is Null
